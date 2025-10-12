@@ -308,7 +308,8 @@ public class MainFrame extends JFrame {
         content.add(simplePanel("Quản lý chuyến đi"),     "quanly_chuyendi");
         
 
-        content.add(simplePanel("Tìm kiếm chuyến đi"),    "timkiem_chuyendi");
+//        content.add(simplePanel("Tìm kiếm chuyến đi"),    "timkiem_chuyendi");
+        content.add(new TimKiemChuyenDiPanel(),            "timkiem_chuyendi");
         content.add(simplePanel("Tìm kiếm khách hàng"),   "timkiem_khachhang");
         content.add(simplePanel("Tìm kiếm nhân viên"),    "timkiem_nhanvien");
         content.add(simplePanel("Tìm kiếm hóa đơn"),      "timkiem_hoadon");
