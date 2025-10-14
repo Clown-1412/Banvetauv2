@@ -13,10 +13,13 @@ public class ChuyenDi {
     private final LocalDateTime thoiGianKhoiHanh;
     private final LocalDateTime thoiGianKetThuc;
     private final String tenTau;
+    private int soGheTrong;
 
+    
+//constructor
 public ChuyenDi(String maChuyenTau, String gaDi, String gaDen,
                 LocalDateTime thoiGianKhoiHanh, LocalDateTime thoiGianKetThuc,
-                String tenTau)
+                String tenTau, int soGheTrong)
 
     {
         this.maChuyenTau = maChuyenTau;
@@ -25,6 +28,7 @@ public ChuyenDi(String maChuyenTau, String gaDi, String gaDen,
         this.thoiGianKhoiHanh = thoiGianKhoiHanh;
         this.thoiGianKetThuc = thoiGianKetThuc;
         this.tenTau = tenTau;
+        this.soGheTrong = soGheTrong;
     }
 
     public String getMaChuyenTau() {
@@ -49,5 +53,13 @@ public ChuyenDi(String maChuyenTau, String gaDi, String gaDen,
 
     public String getTenTau() {
         return tenTau;
+    }
+    
+    public int getSoGheTrong() {
+    return soGheTrong;
+    }
+
+    public void setSoGheTrong(int soGheTrong) {
+        this.soGheTrong = soGheTrong;
     }
 }
