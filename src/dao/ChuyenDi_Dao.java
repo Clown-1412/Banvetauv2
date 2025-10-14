@@ -3,7 +3,7 @@ package dao;
 import connectDB.ConnectDB;
 import model.ChuyenDi;
 
-import java.math.BigDecimal;
+//import java.math.BigDecimal;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -12,7 +12,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * DAO phục vụ tra cứu dữ liệu chuyến tàu.
+ * tra cứu dữ liệu chuyến tàu.
  */
 public class ChuyenDi_Dao {
 
@@ -49,7 +49,7 @@ public class ChuyenDi_Dao {
         StringBuilder sql = new StringBuilder(
                 "SELECT ct.maChuyenTau, lt.gaDi, lt.gaDen, " +
                 "       ct.thoiGianKhoiHanh, ct.thoiGianKetThuc, " +
-                "       t.tenTau " +            // <- có khoảng trắng cuối dòng
+                "       t.tenTau, ct.soGheTrong " +            // <- có khoảng trắng cuối dòng
                 "FROM ChuyenTau ct " +
                 "JOIN LichTrinh lt ON ct.maLichTrinh = lt.maLichTrinh " +
                 "LEFT JOIN Tau t ON ct.maTau = t.maTau " +
@@ -78,7 +78,7 @@ public class ChuyenDi_Dao {
             sql.append(" AND ct.thoiGianKhoiHanh <= ?");
             params.add(new Timestamp(khoiHanhDen.getTime()));
         }
-
+        
 
         sql.append(" ORDER BY ct.thoiGianKhoiHanh");
 
@@ -98,6 +98,7 @@ public class ChuyenDi_Dao {
                     Timestamp gioDi = rs.getTimestamp("thoiGianKhoiHanh");
                     Timestamp gioDen = rs.getTimestamp("thoiGianKetThuc");
                     String tenTau = rs.getString("tenTau");
+                    int soGheTrong = rs.getInt("soGheTrong");
 
                     LocalDateTime khoiHanh = gioDi != null
                             ? LocalDateTime.ofInstant(gioDi.toInstant(), ZoneId.systemDefault())
@@ -111,7 +112,8 @@ public class ChuyenDi_Dao {
                             gaDenVal,
                             khoiHanh,
                             ketThuc,
-                            tenTau
+                            tenTau,
+                            soGheTrong
                             ));
                 }
             }   
