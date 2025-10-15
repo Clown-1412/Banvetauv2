@@ -40,8 +40,18 @@ public class NhanVien_Dao {
     // =================== CRUD phục vụ màn quản lý nhân viên ===================
 
     public List<NhanVienThongTin> findAll() throws SQLException {
-        List<NhanVienThongTin> list = new ArrayList<>();
-        String sql = "SELECT maNV, tenNV, ngaySinh, soDienThoai, email, loaiNV FROM NhanVien ORDER BY maNV";
+        List<NhanVienThongTin> list = new ArrayList<>(); //chỉ hiện nhân viên có tài khoản active
+            String sql = """
+                SELECT nv.maNV, nv.tenNV, nv.ngaySinh, nv.soDienThoai, nv.email, nv.loaiNV
+                FROM NhanVien nv
+                WHERE EXISTS (
+                    SELECT 1 FROM TaiKhoan tk
+                    WHERE tk.maNV = nv.maNV
+                      AND LOWER(LTRIM(RTRIM(COALESCE(tk.trangThai, '')))) = 'active'
+                )
+                OR NOT EXISTS (SELECT 1 FROM TaiKhoan tk WHERE tk.maNV = nv.maNV)
+                ORDER BY nv.maNV
+            """;
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -135,9 +145,15 @@ public class NhanVien_Dao {
             return ps.executeUpdate();
         }
     }
-
-    public int deleteById(String maNV) throws SQLException {
-        String sql = "DELETE FROM NhanVien WHERE maNV = ?";
+    
+// ẩn nhân viên trong table
+    public int deactivateById(String maNV) throws SQLException {
+        String sql = """
+            UPDATE TaiKhoan
+               SET trangThai = 'inactive'
+             WHERE maNV = ?
+               AND LOWER(LTRIM(RTRIM(COALESCE(trangThai, '')))) <> 'inactive'
+        """;
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maNV);
