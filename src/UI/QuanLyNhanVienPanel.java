@@ -295,7 +295,7 @@ public class QuanLyNhanVienPanel extends JPanel {
         }
 
         try {
-            int affected = nvDao.deleteById(ma);
+            int affected = nvDao.deactivateById(ma);
             if (affected > 0) {
                 JOptionPane.showMessageDialog(this, "Đã xóa nhân viên.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                 clearSelection();
