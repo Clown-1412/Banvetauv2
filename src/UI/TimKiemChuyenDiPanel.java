@@ -1,7 +1,7 @@
 package UI;
 
 import dao.ChuyenDi_Dao;
-import model.ChuyenDi;
+import model.ChuyenTau;
 
 import com.toedter.calendar.JDateChooser;
 import javax.swing.*;
@@ -201,7 +201,7 @@ public class TimKiemChuyenDiPanel extends JPanel {
         }
 
         try {
-            List<ChuyenDi> data = dao.search(
+            List<ChuyenTau> data = dao.search(
                     txtMaChuyenDi.getText(),
                     (String) cboGaDi.getSelectedItem(),
                     (String) cboGaDen.getSelectedItem(),
@@ -210,7 +210,7 @@ public class TimKiemChuyenDiPanel extends JPanel {
             );
 
             tableModel.setRowCount(0);
-            for (ChuyenDi cd : data) {
+            for (ChuyenTau cd : data) {
                 tableModel.addRow(new Object[]{
                         cd.getMaChuyenTau(),
                         safeString(cd.getGaDi()),
