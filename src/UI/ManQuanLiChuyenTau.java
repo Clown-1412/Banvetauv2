@@ -21,21 +21,21 @@ public class ManQuanLiChuyenTau extends JPanel {
     private final JComboBox<String> cboGaDi    = new JComboBox<>();
     private final JComboBox<String> cboGaDen   = new JComboBox<>();
     private final JComboBox<String> cboTau     = new JComboBox<>();
-    private final JComboBox<String> cboLoaiGhe = new JComboBox<>();
+//    private final JComboBox<String> cboLoaiGhe = new JComboBox<>();
 
     // JCalendar + Spinner thời gian
     private final DateTimePicker dtKH;   // Thời Gian Khởi Hành
     private final DateTimePicker dtDT;   // Thời Gian Dự Tính
 
     // ===== Buttons (primary blue) =====
-    private final PrimaryButton btnThem    = new PrimaryButton("Thêm Chuyến Đi");
-    private final PrimaryButton btnXoa     = new PrimaryButton("Xóa Chuyến Đi");
-    private final PrimaryButton btnCapNhat = new PrimaryButton("Cập Nhật Chuyến Đi");
+    private final PrimaryButton btnThem    = new PrimaryButton("Thêm Chuyến Tàu");
+    private final PrimaryButton btnXoa     = new PrimaryButton("Xóa Chuyến Tàu");
+    private final PrimaryButton btnCapNhat = new PrimaryButton("Cập Nhật Chuyến Tàu");
 
     // ===== Table =====
     // ĐÃ XOÁ “Số Ghế” và “Số Ghế Đã Đặt”
     private final DefaultTableModel model = new DefaultTableModel(new String[]{
-            "Mã Chuyến Đi","Ga Đi","Ga Đến","Thời Gian Đi",
+            "Mã Chuyến Tàu","Ga Đi","Ga Đến","Thời Gian Đi",
             "Thời Gian Khởi Hành","Thời Gian Dự Tính","Tàu Di Chuyển",
             "Toa","Khoang","Loại Ghế","Số Ghế Còn Trống"
     }, 0) { @Override public boolean isCellEditable(int r,int c){ return false; } };
@@ -67,7 +67,7 @@ public class ManQuanLiChuyenTau extends JPanel {
         cboGaDi.setSelectedIndex(-1);
         cboGaDen.setSelectedIndex(-1);
         cboTau.setSelectedIndex(-1);
-        cboLoaiGhe.setSelectedIndex(-1);
+//        cboLoaiGhe.setSelectedIndex(-1);
 
         add(buildFilterCard(), BorderLayout.NORTH);
         add(buildTableCard(), BorderLayout.CENTER);
@@ -83,9 +83,14 @@ public class ManQuanLiChuyenTau extends JPanel {
         gbc.insets = new Insets(6, 8, 6, 8);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        addRow(card, gbc, 0, new JLabel("Mã Chuyến Đi :"), txtMa, 3);
+        addRow(card, gbc, 0, new JLabel("Mã Chuyến Tàu :"), txtMa, 3);
         addPair(card, gbc, 1, new JLabel("Ga đi :"),  cboGaDi,  new JLabel("Ga đến :"), cboGaDen);
-        addPair(card, gbc, 2, new JLabel("Tàu Di Chuyển :"), cboTau, new JLabel("Loại Ghế :"), cboLoaiGhe);
+//        addPair(card, gbc, 2, new JLabel("Tàu Di Chuyển :"), cboTau, new JLabel("Loại Ghế :"), cboLoaiGhe);
+//        addRow(card, gbc, 2, new JLabel("Tàu Di Chuyển :"), cboTau, 3);
+        addPair(card, gbc, 2,
+        new JLabel("Tàu Di Chuyển :"), cboTau,
+        new JLabel(""), makeFiller()); // giữ layout 4 cột, bên phải là filler
+
 
         // Dùng DateTimePicker thay cho textfield
         addPair(card, gbc, 3,
@@ -146,6 +151,14 @@ public class ManQuanLiChuyenTau extends JPanel {
     }
 
     // ===== helpers =====
+        private JComponent makeFiller() {
+        JPanel p = new JPanel();
+        p.setOpaque(false);
+        // Cho phép giãn ra nhưng không thấy gì
+        p.setMinimumSize(new Dimension(0, 0));
+        p.setPreferredSize(new Dimension(0, 0));
+        return p;
+    }
     private void addRow(JPanel p, GridBagConstraints gbc, int row, JComponent label, JComponent field, int span) {
         gbc.gridy = row; gbc.gridx = 0; gbc.gridwidth = 1; gbc.weightx = 0; p.add(label, gbc);
         gbc.gridx = 1; gbc.gridwidth = span; gbc.weightx = 1; p.add(field, gbc);
@@ -162,7 +175,7 @@ public class ManQuanLiChuyenTau extends JPanel {
     private void styleInputs() {
         int h = 28;
         Font inputFont = new Font("Segoe UI", Font.PLAIN, 13);
-        for (JComponent c : new JComponent[]{txtMa, cboGaDi, cboGaDen, cboTau, cboLoaiGhe}) {
+        for (JComponent c : new JComponent[]{txtMa, cboGaDi, cboGaDen, cboTau/* , cboLoaiGhe */}) {
             styleInputComponent(c);
             c.setPreferredSize(new Dimension(260, h));
             c.setFont(inputFont);
