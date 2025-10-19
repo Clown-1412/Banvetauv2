@@ -1,6 +1,7 @@
 package UI;
 
 import com.toedter.calendar.JDateChooser;
+import dao.ChuyenTauDao;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -11,6 +12,10 @@ import java.awt.*;
 import java.awt.Rectangle;
 import java.util.Calendar;
 import java.util.Date;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 public class ManQuanLiChuyenTau extends JPanel {
 
@@ -18,10 +23,14 @@ public class ManQuanLiChuyenTau extends JPanel {
     private final JTextField txtMa = new JTextField();
 
     // ComboBox KHÔNG có dữ liệu demo
-    private final JComboBox<String> cboGaDi    = new JComboBox<>();
-    private final JComboBox<String> cboGaDen   = new JComboBox<>();
-    private final JComboBox<String> cboTau     = new JComboBox<>();
+//    private final JComboBox<String> cboGaDi    = new JComboBox<>();
+//    private final JComboBox<String> cboGaDen   = new JComboBox<>();
+//    private final JComboBox<String> cboTau     = new JComboBox<>();
 //    private final JComboBox<String> cboLoaiGhe = new JComboBox<>();
+        // ComboBox lấy dữ liệu từ database
+    private final JComboBox<ComboItem> cboGaDi  = new JComboBox<>();
+    private final JComboBox<ComboItem> cboGaDen = new JComboBox<>();
+    private final JComboBox<ComboItem> cboTau   = new JComboBox<>();
 
     // JCalendar + Spinner thời gian
     private final DateTimePicker dtKH;   // Thời Gian Khởi Hành
@@ -31,6 +40,7 @@ public class ManQuanLiChuyenTau extends JPanel {
     private final PrimaryButton btnThem    = new PrimaryButton("Thêm Chuyến Tàu");
     private final PrimaryButton btnXoa     = new PrimaryButton("Xóa Chuyến Tàu");
     private final PrimaryButton btnCapNhat = new PrimaryButton("Cập Nhật Chuyến Tàu");
+    private final ChuyenTauDao chuyenTauDao = new ChuyenTauDao();
 
     // ===== Table =====
     // ĐÃ XOÁ “Số Ghế” và “Số Ghế Đã Đặt”
@@ -62,6 +72,10 @@ public class ManQuanLiChuyenTau extends JPanel {
 
         styleInputs();
         styleButtons();
+        
+        initActions();
+        loadComboData();
+        prepareNextId();
 
         // Đảm bảo combo KHÔNG chọn gì (đều rỗng)
         cboGaDi.setSelectedIndex(-1);
@@ -212,7 +226,174 @@ public class ManQuanLiChuyenTau extends JPanel {
             }
         });
     }
+//------------------------------------------------------------------------   
+        private void initActions() {
+        btnThem.addActionListener(e -> handleAdd());
+        btnXoa.addActionListener(e -> handleDelete());
+        btnCapNhat.addActionListener(e -> handleUpdate());
+    }
 
+    private void loadComboData() {
+        try {
+            DefaultComboBoxModel<ComboItem> gaDiModel = new DefaultComboBoxModel<>();
+            DefaultComboBoxModel<ComboItem> gaDenModel = new DefaultComboBoxModel<>();
+            List<Map.Entry<String, String>> gaList = chuyenTauDao.fetchGaOptions();
+            for (Map.Entry<String, String> entry : gaList) {
+                ComboItem item = new ComboItem(entry.getKey(), entry.getValue());
+                gaDiModel.addElement(item);
+                gaDenModel.addElement(item);
+            }
+            cboGaDi.setModel(gaDiModel);
+            cboGaDen.setModel(gaDenModel);
+
+            DefaultComboBoxModel<ComboItem> tauModel = new DefaultComboBoxModel<>();
+            List<Map.Entry<String, String>> tauList = chuyenTauDao.fetchTauOptions();
+            for (Map.Entry<String, String> entry : tauList) {
+                tauModel.addElement(new ComboItem(entry.getKey(), entry.getValue()));
+            }
+            cboTau.setModel(tauModel);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Không thể tải dữ liệu ga/tàu: " + ex.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void prepareNextId() {
+        try {
+            String nextId = chuyenTauDao.nextId();
+            txtMa.setText(nextId);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Không thể sinh mã chuyến tàu: " + ex.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void handleAdd() {
+        try {
+            ComboItem gaDi = (ComboItem) cboGaDi.getSelectedItem();
+            ComboItem gaDen = (ComboItem) cboGaDen.getSelectedItem();
+            ComboItem tau = (ComboItem) cboTau.getSelectedItem();
+
+            if (gaDi == null) throw new IllegalArgumentException("Vui lòng chọn ga đi.");
+            if (gaDen == null) throw new IllegalArgumentException("Vui lòng chọn ga đến.");
+            if (tau == null) throw new IllegalArgumentException("Vui lòng chọn tàu di chuyển.");
+
+            LocalDateTime tgKhoiHanh = dtKH.getLocalDateTime();
+            LocalDateTime tgKetThuc = dtDT.getLocalDateTime();
+            validateThoiGian(tgKhoiHanh, tgKetThuc);
+
+            String maMoi = chuyenTauDao.nextId();
+            chuyenTauDao.createChuyenTau(maMoi, gaDi.id(), gaDen.id(), tau.id(), tgKhoiHanh, tgKetThuc);
+
+            JOptionPane.showMessageDialog(this, "Đã thêm chuyến tàu " + maMoi + " thành công.");
+            clearForm();
+            prepareNextId();
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Không thể thêm chuyến tàu: " + ex.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void handleDelete() {
+        String ma = txtMa.getText().trim();
+        if (ma.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập mã chuyến tàu cần xóa.",
+                    "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int option = JOptionPane.showConfirmDialog(this,
+                "Bạn chắc chắn muốn xóa chuyến tàu " + ma + "?",
+                "Xác nhận", JOptionPane.YES_NO_OPTION);
+        if (option != JOptionPane.YES_OPTION) return;
+
+        try {
+            int deleted = chuyenTauDao.deleteById(ma);
+            if (deleted > 0) {
+                JOptionPane.showMessageDialog(this, "Đã xóa chuyến tàu " + ma + ".");
+                clearForm();
+                prepareNextId();
+            } else {
+                JOptionPane.showMessageDialog(this, "Không tìm thấy chuyến tàu " + ma + ".",
+                        "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Không thể xóa chuyến tàu: " + ex.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void handleUpdate() {
+        String ma = txtMa.getText().trim();
+        if (ma.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập mã chuyến tàu cần cập nhật.",
+                    "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            ComboItem gaDi = (ComboItem) cboGaDi.getSelectedItem();
+            ComboItem gaDen = (ComboItem) cboGaDen.getSelectedItem();
+            ComboItem tau = (ComboItem) cboTau.getSelectedItem();
+
+            if (gaDi == null) throw new IllegalArgumentException("Vui lòng chọn ga đi.");
+            if (gaDen == null) throw new IllegalArgumentException("Vui lòng chọn ga đến.");
+            if (tau == null) throw new IllegalArgumentException("Vui lòng chọn tàu di chuyển.");
+
+            LocalDateTime tgKhoiHanh = dtKH.getLocalDateTime();
+            LocalDateTime tgKetThuc = dtDT.getLocalDateTime();
+            validateThoiGian(tgKhoiHanh, tgKetThuc);
+
+            int updated = chuyenTauDao.update(ma, gaDi.id(), gaDen.id(), tau.id(), tgKhoiHanh, tgKetThuc);
+            if (updated > 0) {
+                JOptionPane.showMessageDialog(this, "Đã cập nhật chuyến tàu " + ma + " thành công.");
+            } else {
+                JOptionPane.showMessageDialog(this, "Không tìm thấy chuyến tàu " + ma + ".",
+                        "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Không thể cập nhật chuyến tàu: " + ex.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void validateThoiGian(LocalDateTime khoiHanh, LocalDateTime ketThuc) {
+        if (khoiHanh == null) throw new IllegalArgumentException("Vui lòng chọn thời gian khởi hành.");
+        if (ketThuc == null) throw new IllegalArgumentException("Vui lòng chọn thời gian dự tính.");
+        if (!ketThuc.isAfter(khoiHanh)) {
+            throw new IllegalArgumentException("Thời gian kết thúc phải sau thời gian khởi hành.");
+        }
+    }
+
+    private void clearForm() {
+        cboGaDi.setSelectedIndex(-1);
+        cboGaDen.setSelectedIndex(-1);
+        cboTau.setSelectedIndex(-1);
+        dtKH.setLocalDateTime(null);
+        dtDT.setLocalDateTime(null);
+    }
+
+    private static class ComboItem {
+        private final String id;
+        private final String label;
+
+        ComboItem(String id, String label) {
+            this.id = id;
+            this.label = label;
+        }
+
+        String id() { return id; }
+
+        @Override
+        public String toString() {
+            return label;
+        }
+    }
+//--------------------------------------------------------
     // Nền gradient
     @Override protected void paintComponent(Graphics g) {
         Graphics2D g2 = (Graphics2D) g.create();
