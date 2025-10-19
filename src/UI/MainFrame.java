@@ -4,15 +4,22 @@ import model.TaiKhoan;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.MatteBorder;
 import java.awt.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class MainFrame extends JFrame {
+    
+    
     // Cards for content
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel content = new JPanel(cardLayout);
+    {
+    content.setOpaque(true);
+    content.setBackground(Color.WHITE);      // <<< đổi nền trắng để hết viền xám
+    content.setBorder(new EmptyBorder(0,0,0,0));
+    }
+    
 
     // Current user
     private final TaiKhoan tk;
@@ -49,18 +56,24 @@ public class MainFrame extends JFrame {
         JPanel sidebar = buildSidebar();      // << menu mới nền sáng, không header admin
         JPanel topbar = buildTopbar();
         buildCards();
+        
 
         JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(Color.WHITE);             // nhất quán nền
         root.add(sidebar, BorderLayout.WEST);
         root.add(topbar, BorderLayout.NORTH);
         root.add(content, BorderLayout.CENTER);
         setContentPane(root);
 
         cardLayout.show(content, "home");
+
     }
+    
+    
 
     // Build Topbar
     private JPanel buildTopbar() {
+        
         JPanel top = new JPanel(new BorderLayout());
         top.setBackground(new Color(101, 150, 248));
         top.setBorder(new EmptyBorder(8, 12, 8, 12));
@@ -361,7 +374,7 @@ public class MainFrame extends JFrame {
         content.add(simplePanel("Quản lý tài khoản"),     "quanly_taikhoan");
         content.add(new QuanLyNhanVienPanel(),            "quanly_nhanvien");
         //content.add(simplePanel("Quản lý chuyến tàu"),     "quanly_chuyentau");
-        content.add(new ManQuanLiChuyenTau(),             "quanly_chuyendi");
+        content.add(new ManQuanLiChuyenTau(),             "quanly_chuyentau");
 
         content.add(new TimKiemChuyenDiPanel(),           "timkiem_chuyendi");
         content.add(simplePanel("Tìm kiếm khách hàng"),   "timkiem_khachhang");
