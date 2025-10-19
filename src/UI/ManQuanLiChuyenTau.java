@@ -1,4 +1,4 @@
-package ui;
+package UI;
 
 import com.toedter.calendar.JDateChooser;
 
@@ -432,14 +432,14 @@ public class ManQuanLiChuyenTau extends JPanel {
     }
 
     // Demo
-    public static void main(String[] args) throws Exception {
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        JFrame f = new JFrame("Quản lí chuyến tàu");
-        f.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.setSize(1700, 760);
-        f.setLocationRelativeTo(null);
-        f.setContentPane(new ManQuanLiChuyenTau());
-        f.setVisible(true);
-    }
+//    public static void main(String[] args) throws Exception {
+//        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+//        JFrame f = new JFrame("Quản lí chuyến tàu");
+//        f.setExtendedState(JFrame.MAXIMIZED_BOTH);
+//        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//        f.setSize(1700, 760);
+//        f.setLocationRelativeTo(null);
+//        f.setContentPane(new ManQuanLiChuyenTau());
+//        f.setVisible(true);
+//    }
 }
