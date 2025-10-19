@@ -15,42 +15,44 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import model.Ga;
+import model.Tau;
 
 public class ChuyenTauDao {
 
-    public List<Map.Entry<String, String>> fetchGaOptions() throws SQLException {
+    public List<Ga> fetchGaOptions() throws SQLException {
         String sql = "SELECT maGa, tenGa FROM Ga ORDER BY tenGa";
-        List<Map.Entry<String, String>> list = new ArrayList<>();
+        List<Ga> list = new ArrayList<>();
         try (Connection cn = ConnectDB.getConnection();
              PreparedStatement ps = cn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                list.add(new AbstractMap.SimpleEntry<>(rs.getString("maGa"), rs.getString("tenGa")));
+                list.add(new Ga(rs.getString("maGa"), rs.getString("tenGa")));
             }
         }
         return list;
     }
 
-    public List<Map.Entry<String, String>> fetchTauOptions() throws SQLException {
+    public List<Tau> fetchTauOptions() throws SQLException {
         String sql = "SELECT maTau, tenTau FROM Tau ORDER BY tenTau";
-        List<Map.Entry<String, String>> list = new ArrayList<>();
+        List<Tau> list = new ArrayList<>();
         try (Connection cn = ConnectDB.getConnection();
              PreparedStatement ps = cn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                list.add(new AbstractMap.SimpleEntry<>(rs.getString("maTau"), rs.getString("tenTau")));
+                list.add(new Tau(rs.getString("maTau"), rs.getString("tenTau")));
             }
         }
         return list;
     }
 
-    public String nextId() throws SQLException {
+     public String generateMaChuyenTau() throws SQLException {
         try (Connection cn = ConnectDB.getConnection()) {
-            return nextId(cn);
+            return generateMaChuyenTau(cn);
         }
     }
 
-    private String nextId(Connection cn) throws SQLException {
+    private String generateMaChuyenTau(Connection cn) throws SQLException {
         String sql = "SELECT MAX(CAST(SUBSTRING(maChuyenTau, 3, 50) AS INT)) FROM ChuyenTau WHERE ISNUMERIC(SUBSTRING(maChuyenTau, 3, 50)) = 1";
         try (Statement st = cn.createStatement(); ResultSet rs = st.executeQuery(sql)) {
             int next = 1;
