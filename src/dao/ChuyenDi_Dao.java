@@ -1,7 +1,7 @@
 package dao;
 
 import connectDB.ConnectDB;
-import model.ChuyenDi;
+import model.ChuyenTau;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -53,7 +53,7 @@ public class ChuyenDi_Dao {
         return new Timestamp(cal.getTimeInMillis());
     }
 
-    public List<ChuyenDi> search(String maChuyen,
+    public List<ChuyenTau> search(String maChuyen,
                                  String gaDi,
                                  String gaDen,
                                  Date khoiHanhTu,
@@ -91,13 +91,13 @@ public class ChuyenDi_Dao {
 
         sql.append(" ORDER BY ct.thoiGianKhoiHanh");
 
-        List<ChuyenDi> out = new ArrayList<>();
+        List<ChuyenTau> out = new ArrayList<>();
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql.toString())) {
             for (int i = 0; i < params.size(); i++) ps.setObject(i + 1, params.get(i));
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    out.add(new ChuyenDi(
+                    out.add(new ChuyenTau(
                         rs.getString("maChuyenTau"),
                         rs.getString("gaDi"),
                         rs.getString("gaDen"),
