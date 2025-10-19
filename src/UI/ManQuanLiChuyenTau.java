@@ -2,6 +2,8 @@ package UI;
 
 import com.toedter.calendar.JDateChooser;
 import dao.ChuyenTauDao;
+import model.Ga;
+import model.Tau;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -27,10 +29,10 @@ public class ManQuanLiChuyenTau extends JPanel {
 //    private final JComboBox<String> cboGaDen   = new JComboBox<>();
 //    private final JComboBox<String> cboTau     = new JComboBox<>();
 //    private final JComboBox<String> cboLoaiGhe = new JComboBox<>();
-        // ComboBox lấy dữ liệu từ database
-    private final JComboBox<ComboItem> cboGaDi  = new JComboBox<>();
-    private final JComboBox<ComboItem> cboGaDen = new JComboBox<>();
-    private final JComboBox<ComboItem> cboTau   = new JComboBox<>();
+    // ComboBox lấy dữ liệu từ database
+    private final JComboBox<Ga>  cboGaDi  = new JComboBox<>();
+    private final JComboBox<Ga>  cboGaDen = new JComboBox<>();
+    private final JComboBox<Tau> cboTau   = new JComboBox<>();
 
     // JCalendar + Spinner thời gian
     private final DateTimePicker dtKH;   // Thời Gian Khởi Hành
@@ -235,21 +237,20 @@ public class ManQuanLiChuyenTau extends JPanel {
 
     private void loadComboData() {
         try {
-            DefaultComboBoxModel<ComboItem> gaDiModel = new DefaultComboBoxModel<>();
-            DefaultComboBoxModel<ComboItem> gaDenModel = new DefaultComboBoxModel<>();
-            List<Map.Entry<String, String>> gaList = chuyenTauDao.fetchGaOptions();
-            for (Map.Entry<String, String> entry : gaList) {
-                ComboItem item = new ComboItem(entry.getKey(), entry.getValue());
-                gaDiModel.addElement(item);
-                gaDenModel.addElement(item);
+            DefaultComboBoxModel<Ga> gaDiModel = new DefaultComboBoxModel<>();
+            DefaultComboBoxModel<Ga> gaDenModel = new DefaultComboBoxModel<>();
+            List<Ga> gaList = chuyenTauDao.fetchGaOptions();
+            for (Ga ga : gaList) {
+                gaDiModel.addElement(ga);
+                gaDenModel.addElement(ga);
             }
             cboGaDi.setModel(gaDiModel);
             cboGaDen.setModel(gaDenModel);
 
-            DefaultComboBoxModel<ComboItem> tauModel = new DefaultComboBoxModel<>();
-            List<Map.Entry<String, String>> tauList = chuyenTauDao.fetchTauOptions();
-            for (Map.Entry<String, String> entry : tauList) {
-                tauModel.addElement(new ComboItem(entry.getKey(), entry.getValue()));
+            DefaultComboBoxModel<Tau> tauModel = new DefaultComboBoxModel<>();
+            List<Tau> tauList = chuyenTauDao.fetchTauOptions();
+            for (Tau tau : tauList) {
+                tauModel.addElement(tau);
             }
             cboTau.setModel(tauModel);
         } catch (SQLException ex) {
@@ -260,7 +261,7 @@ public class ManQuanLiChuyenTau extends JPanel {
 
     private void prepareNextId() {
         try {
-            String nextId = chuyenTauDao.nextId();
+            String nextId = chuyenTauDao.generateMaChuyenTau();
             txtMa.setText(nextId);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Không thể sinh mã chuyến tàu: " + ex.getMessage(),
@@ -270,9 +271,9 @@ public class ManQuanLiChuyenTau extends JPanel {
 
     private void handleAdd() {
         try {
-            ComboItem gaDi = (ComboItem) cboGaDi.getSelectedItem();
-            ComboItem gaDen = (ComboItem) cboGaDen.getSelectedItem();
-            ComboItem tau = (ComboItem) cboTau.getSelectedItem();
+            Ga gaDi = (Ga) cboGaDi.getSelectedItem();
+            Ga gaDen = (Ga) cboGaDen.getSelectedItem();
+            Tau tau = (Tau) cboTau.getSelectedItem();
 
             if (gaDi == null) throw new IllegalArgumentException("Vui lòng chọn ga đi.");
             if (gaDen == null) throw new IllegalArgumentException("Vui lòng chọn ga đến.");
@@ -282,8 +283,11 @@ public class ManQuanLiChuyenTau extends JPanel {
             LocalDateTime tgKetThuc = dtDT.getLocalDateTime();
             validateThoiGian(tgKhoiHanh, tgKetThuc);
 
-            String maMoi = chuyenTauDao.nextId();
-            chuyenTauDao.createChuyenTau(maMoi, gaDi.id(), gaDen.id(), tau.id(), tgKhoiHanh, tgKetThuc);
+            String maMoi = txtMa.getText().trim();
+            if (maMoi.isEmpty()) {
+                maMoi = chuyenTauDao.generateMaChuyenTau();
+            }
+            chuyenTauDao.createChuyenTau(maMoi, gaDi.getMaGa(), gaDen.getMaGa(), tau.getMaTau(), tgKhoiHanh, tgKetThuc);
 
             JOptionPane.showMessageDialog(this, "Đã thêm chuyến tàu " + maMoi + " thành công.");
             clearForm();
@@ -334,9 +338,9 @@ public class ManQuanLiChuyenTau extends JPanel {
         }
 
         try {
-            ComboItem gaDi = (ComboItem) cboGaDi.getSelectedItem();
-            ComboItem gaDen = (ComboItem) cboGaDen.getSelectedItem();
-            ComboItem tau = (ComboItem) cboTau.getSelectedItem();
+            Ga gaDi = (Ga) cboGaDi.getSelectedItem();
+            Ga gaDen = (Ga) cboGaDen.getSelectedItem();
+            Tau tau = (Tau) cboTau.getSelectedItem();
 
             if (gaDi == null) throw new IllegalArgumentException("Vui lòng chọn ga đi.");
             if (gaDen == null) throw new IllegalArgumentException("Vui lòng chọn ga đến.");
@@ -346,7 +350,7 @@ public class ManQuanLiChuyenTau extends JPanel {
             LocalDateTime tgKetThuc = dtDT.getLocalDateTime();
             validateThoiGian(tgKhoiHanh, tgKetThuc);
 
-            int updated = chuyenTauDao.update(ma, gaDi.id(), gaDen.id(), tau.id(), tgKhoiHanh, tgKetThuc);
+            int updated = chuyenTauDao.update(ma, gaDi.getMaGa(), gaDen.getMaGa(), tau.getMaTau(), tgKhoiHanh, tgKetThuc);
             if (updated > 0) {
                 JOptionPane.showMessageDialog(this, "Đã cập nhật chuyến tàu " + ma + " thành công.");
             } else {
@@ -377,22 +381,23 @@ public class ManQuanLiChuyenTau extends JPanel {
         dtDT.setLocalDateTime(null);
     }
 
-    private static class ComboItem {
-        private final String id;
-        private final String label;
-
-        ComboItem(String id, String label) {
-            this.id = id;
-            this.label = label;
-        }
-
-        String id() { return id; }
-
-        @Override
-        public String toString() {
-            return label;
-        }
-    }
+//    private static class ComboItem {
+//        private final String id;
+//        private final String label;
+//
+//        ComboItem(String id, String label) {
+//            this.id = id;
+//            this.label = label;
+//        }
+//
+//        String id() { return id; }
+//
+//        @Override
+//        public String toString() {
+//            return label;
+//        }
+//    }
+    
 //--------------------------------------------------------
     // Nền gradient
     @Override protected void paintComponent(Graphics g) {
