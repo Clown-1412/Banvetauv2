@@ -2,6 +2,7 @@ package UI;
 
 import com.toedter.calendar.JDateChooser;
 import dao.ChuyenTauDao;
+import model.ChuyenTauThongTin;
 import model.Ga;
 import model.Tau;
 
@@ -16,10 +17,11 @@ import java.util.Calendar;
 import java.util.Date;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
 
 public class ManQuanLiChuyenTau extends JPanel {
+    private static final DateTimeFormatter DATE_TIME_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     // ===== Inputs =====
     private final JTextField txtMa = new JTextField();
@@ -78,6 +80,7 @@ public class ManQuanLiChuyenTau extends JPanel {
         initActions();
         loadComboData();
         prepareNextId();
+        loadTableData();
 
         // Đảm bảo combo KHÔNG chọn gì (đều rỗng)
         cboGaDi.setSelectedIndex(-1);
@@ -268,6 +271,31 @@ public class ManQuanLiChuyenTau extends JPanel {
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
+    
+        private void loadTableData() {
+        try {
+            List<ChuyenTauThongTin> danhSach = chuyenTauDao.fetchDanhSachChuyenTau();
+            model.setRowCount(0);
+            for (ChuyenTauThongTin info : danhSach) {
+                model.addRow(new Object[]{
+                        info.getMaChuyenTau(),
+                        info.getGaDi(),
+                        info.getGaDen(),
+                        formatDuration(info.getThoiGianDi()),
+                        formatDateTime(info.getThoiGianKhoiHanh()),
+                        formatDateTime(info.getThoiGianDuTinh()),
+                        info.getTenTau(),
+                        safe(info.getSoToa()),
+                        safe(info.getTenKhoang()),
+                        safe(info.getTenLoaiGhe()),
+                        info.getSoGheTrong()
+                });
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Không thể tải danh sách chuyến tàu: " + ex.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
     private void handleAdd() {
         try {
@@ -292,6 +320,7 @@ public class ManQuanLiChuyenTau extends JPanel {
             JOptionPane.showMessageDialog(this, "Đã thêm chuyến tàu " + maMoi + " thành công.");
             clearForm();
             prepareNextId();
+            loadTableData();
         } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
         } catch (SQLException ex) {
@@ -319,6 +348,7 @@ public class ManQuanLiChuyenTau extends JPanel {
                 JOptionPane.showMessageDialog(this, "Đã xóa chuyến tàu " + ma + ".");
                 clearForm();
                 prepareNextId();
+                loadTableData();
             } else {
                 JOptionPane.showMessageDialog(this, "Không tìm thấy chuyến tàu " + ma + ".",
                         "Thông báo", JOptionPane.INFORMATION_MESSAGE);
@@ -353,6 +383,7 @@ public class ManQuanLiChuyenTau extends JPanel {
             int updated = chuyenTauDao.update(ma, gaDi.getMaGa(), gaDen.getMaGa(), tau.getMaTau(), tgKhoiHanh, tgKetThuc);
             if (updated > 0) {
                 JOptionPane.showMessageDialog(this, "Đã cập nhật chuyến tàu " + ma + " thành công.");
+                loadTableData();
             } else {
                 JOptionPane.showMessageDialog(this, "Không tìm thấy chuyến tàu " + ma + ".",
                         "Thông báo", JOptionPane.INFORMATION_MESSAGE);
@@ -379,6 +410,27 @@ public class ManQuanLiChuyenTau extends JPanel {
         cboTau.setSelectedIndex(-1);
         dtKH.setLocalDateTime(null);
         dtDT.setLocalDateTime(null);
+    }
+    
+        private String formatDateTime(LocalDateTime value) {
+        return value == null ? "" : value.format(DATE_TIME_FMT);
+    }
+
+    private String formatDuration(Integer minutes) {
+        if (minutes == null) return "";
+        if (minutes < 60) {
+            return minutes + " phút";
+        }
+        int hours = minutes / 60;
+        int mins = minutes % 60;
+        if (mins == 0) {
+            return hours + " giờ";
+        }
+        return hours + " giờ " + mins + " phút";
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value;
     }
 
 //    private static class ComboItem {
