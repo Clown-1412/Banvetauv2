@@ -11,10 +11,9 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDateTime;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import model.ChuyenTauThongTin;
 import model.Ga;
 import model.Tau;
 
@@ -172,5 +171,66 @@ public class ChuyenTauDao {
 
     private String formatId(String prefix, int value, int width) {
         return prefix + String.format("%0" + width + "d", value);
+    }
+
+    public List<ChuyenTauThongTin> fetchDanhSachChuyenTau() throws SQLException {
+        String sql = "SELECT DISTINCT ct.maChuyenTau, "
+                + "       gDi.tenGa AS gaDi, "
+                + "       gDen.tenGa AS gaDen, "
+                + "       lt.thoiGianDi, "
+                + "       ct.thoiGianKhoiHanh, "
+                + "       ct.thoiGianKetThuc, "
+                + "       tau.maTau, "
+                + "       tau.tenTau, "
+                + "       toa.soToa, "
+                + "       khoang.tenKhoangTau, "
+                + "       lg.tenLoaiGhe, "
+                + "       ct.soGheTrong "
+                + "FROM   ChuyenTau ct "
+                + "JOIN   LichTrinh lt   ON lt.maLichTrinh = ct.maLichTrinh "
+                + "JOIN   Ga gDi         ON gDi.maGa = lt.maGaDi "
+                + "JOIN   Ga gDen        ON gDen.maGa = lt.maGaDen "
+                + "JOIN   Tau tau        ON tau.maTau = ct.maTau "
+                + "LEFT JOIN ToaTau toa  ON toa.maTau = tau.maTau "
+                + "LEFT JOIN KhoangTau khoang ON khoang.maToa = toa.maToa "
+                + "LEFT JOIN Ghe ghe     ON ghe.maKhoangTau = khoang.maKhoangTau "
+                + "LEFT JOIN LoaiGhe lg  ON lg.maLoaiGhe = ghe.maLoaiGhe "
+                + "ORDER BY ct.maChuyenTau, toa.soToa, khoang.tenKhoangTau, lg.tenLoaiGhe";
+
+        List<ChuyenTauThongTin> result = new ArrayList<>();
+        try (Connection cn = ConnectDB.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                LocalDateTime khoiHanh = rs.getTimestamp("thoiGianKhoiHanh") != null
+                        ? rs.getTimestamp("thoiGianKhoiHanh").toLocalDateTime()
+                        : null;
+                LocalDateTime ketThuc = rs.getTimestamp("thoiGianKetThuc") != null
+                        ? rs.getTimestamp("thoiGianKetThuc").toLocalDateTime()
+                        : null;
+                Integer thoiGianDi = (Integer) rs.getObject("thoiGianDi");
+
+                String soToa = rs.getString("soToa");
+                if (soToa != null) {
+                    soToa = soToa.trim();
+                }
+
+                result.add(new ChuyenTauThongTin(
+                        rs.getString("maChuyenTau"),
+                        rs.getString("gaDi"),
+                        rs.getString("gaDen"),
+                        thoiGianDi,
+                        khoiHanh,
+                        ketThuc,
+                        rs.getString("tenTau"),
+                        soToa,
+                        rs.getString("tenKhoangTau"),
+                        rs.getString("tenLoaiGhe"),
+                        rs.getInt("soGheTrong")
+                ));
+            }
+        }
+
+        return result;
     }
 }
