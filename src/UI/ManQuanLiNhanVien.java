@@ -222,12 +222,12 @@ public class ManQuanLiNhanVien extends JPanel {
         ));
 
         table.setFillsViewportHeight(true);
-        table.setRowHeight(28);
+        table.setRowHeight(32);
         table.setShowGrid(true);
         table.setGridColor(new Color(235, 242, 255));
         table.setSelectionBackground(BLUE_SOFT);
         table.setSelectionForeground(Color.BLACK);
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         table.setAutoCreateRowSorter(true);
 
         JTableHeader header = table.getTableHeader();
@@ -240,7 +240,7 @@ public class ManQuanLiNhanVien extends JPanel {
                 lbl.setOpaque(true);
                 lbl.setBackground(TABLE_HEADER_BG);
                 lbl.setForeground(Color.WHITE);
-                lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+                lbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
                 lbl.setHorizontalAlignment(SwingConstants.CENTER);
                 lbl.setBorder(new MatteBorder(0, 0, 1, 1, BORDER_SOFT));
             }
@@ -266,14 +266,43 @@ public class ManQuanLiNhanVien extends JPanel {
     }
 
     private void styleButton(JButton b) {
-        b.setFocusPainted(false);
-        b.setBackground(BLUE_PRIMARY);
-        b.setForeground(Color.WHITE);
         b.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        b.setForeground(Color.WHITE);
+        b.setBackground(BLUE_PRIMARY);
+        b.setOpaque(true);
+        b.setContentAreaFilled(true);
         b.setBorder(new EmptyBorder(8, 22, 8, 22));
+        b.setBorderPainted(false);
+        b.setFocusPainted(false);
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
+        // Màu hover và nhấn
+        Color hoverBg  = BLUE_PRIMARY.darker();
+        Color pressBg  = hoverBg.darker();
+
+        b.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseEntered(java.awt.event.MouseEvent e) {
+                b.setBackground(hoverBg);      // hover → xanh đậm
+            }
+            @Override public void mouseExited(java.awt.event.MouseEvent e) {
+                b.setBackground(BLUE_PRIMARY); // rời chuột → xanh gốc
+            }
+            @Override public void mousePressed(java.awt.event.MouseEvent e) {
+                b.setBackground(pressBg);      // nhấn → xanh rất đậm
+            }
+            @Override public void mouseReleased(java.awt.event.MouseEvent e) {
+                // nếu vẫn trong vùng → hover, ngược lại → xanh gốc
+                if (b.getBounds().contains(e.getPoint())) {
+                    b.setBackground(hoverBg);
+                } else {
+                    b.setBackground(BLUE_PRIMARY);
+                }
+            }
+        });
     }
+
+
+
 
     private void wireEvents() {
         btnThem.addActionListener(e -> handleAdd());
@@ -347,8 +376,6 @@ public class ManQuanLiNhanVien extends JPanel {
         }
         LocalDate today = LocalDate.now();
         txtNgayBatDau.setText(DF.format(today));
-        btnSua.setEnabled(false);
-        btnXoa.setEnabled(false);
         generateNextId();
     }
 
@@ -443,7 +470,7 @@ public class ManQuanLiNhanVien extends JPanel {
             int rows = nhanVienDao.insert(nv);
             if (rows > 0) {
                 JOptionPane.showMessageDialog(this,
-                        "Thêm nhân viên thành công. Nhân viên sẽ xuất hiện khi tài khoản được kích hoạt.",
+                        "Thêm nhân viên thành công. Nhân viên đã được hiển thị trong danh sách.",
                         "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                 refreshTable();
                 table.clearSelection();
