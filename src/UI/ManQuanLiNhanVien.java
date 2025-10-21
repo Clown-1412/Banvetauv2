@@ -80,6 +80,24 @@ public class ManQuanLiNhanVien extends JPanel {
         leftForm.setMaximumSize(new Dimension(520, Integer.MAX_VALUE));
         leftHolder.setPreferredSize(new Dimension(520, 0));
         leftHolder.add(leftForm, BorderLayout.CENTER);
+        
+        java.awt.event.MouseAdapter formBackgroundClick = new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                Component source = e.getComponent();
+                if (!(source instanceof Container)) {
+                    return;
+                }
+                Component deepest = SwingUtilities.getDeepestComponentAt((Container) source, e.getX(), e.getY());
+                if (deepest != source) {
+                    return;
+                }
+                resetFormForNewEntry();
+            }
+        };
+        leftHolder.addMouseListener(formBackgroundClick);
+        leftForm.addMouseListener(formBackgroundClick);
+
 
         add(leftHolder, BorderLayout.WEST);
         add(rightTable, BorderLayout.CENTER);
@@ -319,8 +337,7 @@ public class ManQuanLiNhanVien extends JPanel {
     private void loadInitialData() {
         loadLoaiNhanVienOptions();
         refreshTable();
-        table.clearSelection();
-        prepareForNewEntry();
+        resetFormForNewEntry();
     }
 
     private void loadLoaiNhanVienOptions() {
@@ -377,6 +394,16 @@ public class ManQuanLiNhanVien extends JPanel {
         LocalDate today = LocalDate.now();
         txtNgayBatDau.setText(DF.format(today));
         generateNextId();
+//        btnSua.setEnabled(false);
+//        btnXoa.setEnabled(false);
+    }
+
+    private void resetFormForNewEntry() {
+        if (!table.getSelectionModel().isSelectionEmpty()) {
+            table.clearSelection();
+            return;
+        }
+        prepareForNewEntry();
     }
 
     private void generateNextId() {
@@ -473,8 +500,7 @@ public class ManQuanLiNhanVien extends JPanel {
                         "Thêm nhân viên thành công. Nhân viên đã được hiển thị trong danh sách.",
                         "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                 refreshTable();
-                table.clearSelection();
-                prepareForNewEntry();
+                resetFormForNewEntry();
             }
         } catch (SQLException ex) {
             showError("Không thể thêm nhân viên", ex);
@@ -515,8 +541,7 @@ public class ManQuanLiNhanVien extends JPanel {
             if (rows > 0) {
                 JOptionPane.showMessageDialog(this, "Cập nhật nhân viên thành công", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                 refreshTable();
-                table.clearSelection();
-                prepareForNewEntry();
+                resetFormForNewEntry();
             }
         } catch (SQLException ex) {
             showError("Không thể cập nhật nhân viên", ex);
@@ -545,8 +570,7 @@ public class ManQuanLiNhanVien extends JPanel {
                         "Thông báo", JOptionPane.INFORMATION_MESSAGE);
             }
             refreshTable();
-            table.clearSelection();
-            prepareForNewEntry();
+            resetFormForNewEntry();
         } catch (SQLException ex) {
             showError("Không thể cập nhật trạng thái tài khoản", ex);
         }

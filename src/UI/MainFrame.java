@@ -398,7 +398,7 @@ public class MainFrame extends JFrame {
             setBorder(new EmptyBorder(16, 16, 16, 16));
             Image tmp;
             try {
-                tmp = new ImageIcon(getClass().getResource("/img/home.jpg")).getImage();
+                tmp = new ImageIcon(getClass().getResource("/img/gatau1.jpeg")).getImage();
             } catch (Exception ex) {
                 tmp = null;
             }
