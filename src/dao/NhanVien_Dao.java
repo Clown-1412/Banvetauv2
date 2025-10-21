@@ -58,7 +58,7 @@ public class NhanVien_Dao {
 
     /**
      * Danh sách nhân viên hiển thị trên màn quản lý:
-     * chỉ bao gồm những nhân viên có tài khoản ở trạng thái "Kich_Hoat".
+     * bao gồm nhân viên chưa có tài khoản và những tài khoản đang ở trạng thái "Kich_Hoat".
      */
     
     public List<NhanVienThongTin> findAll() throws SQLException {
@@ -76,9 +76,10 @@ public class NhanVien_Dao {
                 lnv.moTa AS moTaLoaiNV
                      
             FROM NhanVien nv
-            JOIN TaiKhoan tk ON tk.maNV = nv.maNV
-                AND UPPER(LTRIM(RTRIM(COALESCE(tk.trangThai, '')))) = 'Kich_Hoat'
+            LEFT JOIN TaiKhoan tk ON tk.maNV = nv.maNV
             LEFT JOIN LoaiNhanVien lnv ON lnv.maLoaiNV = nv.maLoaiNV
+            WHERE tk.maNV IS NULL
+                OR UPPER(LTRIM(RTRIM(COALESCE(tk.trangThai, '')))) = 'Kich_Hoat'
             ORDER BY nv.maNV
         """;
         try (Connection con = ConnectDB.getConnection();
