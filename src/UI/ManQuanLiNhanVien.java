@@ -25,6 +25,7 @@ public class ManQuanLiNhanVien extends JPanel {
     private final JDateChooser dcNgaySinh = new JDateChooser();
     private final JTextField txtSDT    = new JTextField();
     private final JTextField txtEmail  = new JTextField();
+    private final JTextField txtCCCD   = new JTextField(); // 🆕 Ô nhập CCCD
     private final JComboBox<String> cboLoaiNV = new JComboBox<>(
             new String[]{"Quản trị", "Nhân viên bán vé"}
     );
@@ -32,8 +33,8 @@ public class ManQuanLiNhanVien extends JPanel {
     private final DefaultTableModel model = new DefaultTableModel(
             new Object[]{
                     "Mã nhân viên", "Tên nhân viên", "Ngày sinh",
-                    "Số điện thoại", "Email", "Loại nhân viên",
-                    "cccd", "Ngày bắt đầu công việc"
+                    "Số điện thoại", "Email", "CCCD", "Loại nhân viên",
+                    "Ngày bắt đầu công việc"
             }, 0
     ) {
         @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -41,7 +42,7 @@ public class ManQuanLiNhanVien extends JPanel {
     private final JTable table = new JTable(model);
 
     private final JButton btnThem = new JButton("Thêm");
-    private final JButton btnSua  = new JButton("Cật nhật");
+    private final JButton btnSua  = new JButton("Cập nhật");
     private final JButton btnXoa  = new JButton("Xóa");
 
     public ManQuanLiNhanVien() {
@@ -52,7 +53,7 @@ public class ManQuanLiNhanVien extends JPanel {
         JPanel leftForm = buildFormPanel();
         JPanel rightTable = buildTablePanel();
 
-        // Cố định layout, thêm padding cho bảng
+        // Layout cố định
         JPanel leftHolder = new JPanel(new BorderLayout());
         leftHolder.setOpaque(false);
         leftForm.setPreferredSize(new Dimension(520, 0));
@@ -104,11 +105,11 @@ public class ManQuanLiNhanVien extends JPanel {
             comp.setBorder(new CompoundBorder(new LineBorder(BORDER_SOFT), new EmptyBorder(6, 8, 6, 8)));
         };
 
+        // Style cho combobox và datepicker
         cboLoaiNV.setUI(new BasicComboBoxUI());
         dcNgaySinh.setDateFormatString("dd/MM/yyyy");
         dcNgaySinh.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         dcNgaySinh.setOpaque(true);
-
         JTextFieldDateEditor editor = (JTextFieldDateEditor) dcNgaySinh.getDateEditor();
         editor.setEditable(true);
         editor.setColumns(20);
@@ -118,11 +119,11 @@ public class ManQuanLiNhanVien extends JPanel {
         int calBtnW = 34;
         editor.setPreferredSize(new Dimension(fieldSize.width - calBtnW, fieldSize.height));
         editor.setBorder(new CompoundBorder(new LineBorder(BORDER_SOFT), new EmptyBorder(6, 8, 6, 8)));
-
         JButton calBtn = dcNgaySinh.getCalendarButton();
         calBtn.setText("...");
         calBtn.setPreferredSize(new Dimension(calBtnW, fieldSize.height));
 
+        // ====== Thêm lần lượt các label và field ======
         p.add(L.apply("Mã nhân viên"), l); p.add(txtMaNV, f); styleField.accept(txtMaNV);
         l.gridy++; f.gridy++;
         p.add(L.apply("Tên nhân viên"), l); p.add(txtTenNV, f); styleField.accept(txtTenNV);
@@ -133,8 +134,11 @@ public class ManQuanLiNhanVien extends JPanel {
         l.gridy++; f.gridy++;
         p.add(L.apply("Email"), l); p.add(txtEmail, f); styleField.accept(txtEmail);
         l.gridy++; f.gridy++;
+        p.add(L.apply("CCCD"), l); p.add(txtCCCD, f); styleField.accept(txtCCCD); // 🆕 thêm dòng này
+        l.gridy++; f.gridy++;
         p.add(L.apply("Loại nhân viên"), l); p.add(cboLoaiNV, f); styleField.accept(cboLoaiNV);
 
+        // ====== Nút chức năng ======
         JPanel btnBar = new JPanel(new FlowLayout(FlowLayout.CENTER, 25, 15));
         btnBar.setOpaque(false);
         for (JButton b : new JButton[]{btnThem, btnSua, btnXoa}) {
@@ -191,26 +195,23 @@ public class ManQuanLiNhanVien extends JPanel {
             }
         });
 
-        int[] widths = {110, 160, 110, 120, 180, 140, 130, 180};
+        int[] widths = {110, 160, 110, 120, 180, 130, 140, 180};
         for (int i = 0; i < widths.length; i++) {
             TableColumn col = table.getColumnModel().getColumn(i);
             col.setPreferredWidth(widths[i]);
         }
 
-        // Giữ viền mảnh cho bảng, nền trắng hoàn toàn (không xám)
         JScrollPane scroll = new JScrollPane(table);
-        scroll.getViewport().setBackground(Color.WHITE); // nền trong bảng trắng
-        scroll.setBackground(Color.WHITE);               // nền ngoài bảng trắng luôn
+        scroll.getViewport().setBackground(Color.WHITE);
+        scroll.setBackground(Color.WHITE);
         scroll.setBorder(new CompoundBorder(
-                new LineBorder(BORDER_SOFT),             // viền mảnh quanh bảng
-                new EmptyBorder(10, 12, 10, 12)          // thêm padding nhẹ
+                new LineBorder(BORDER_SOFT),
+                new EmptyBorder(10, 12, 10, 12)
         ));
 
-        p.setBackground(Color.WHITE);                    // nền panel chứa bảng trắng
         p.add(scroll, BorderLayout.CENTER);
         return p;
     }
-
 
     private void styleButton(JButton b) {
         b.setFocusPainted(false);
@@ -233,11 +234,11 @@ public class ManQuanLiNhanVien extends JPanel {
                     int row = table.convertRowIndexToModel(r);
                     txtMaNV.setText(s(row, 0));
                     txtTenNV.setText(s(row, 1));
-                    Date d = parseDate(s(row, 2));
-                    dcNgaySinh.setDate(d);
+                    dcNgaySinh.setDate(parseDate(s(row, 2)));
                     txtSDT.setText(s(row, 3));
                     txtEmail.setText(s(row, 4));
-                    cboLoaiNV.setSelectedItem(s(row, 5));
+                    txtCCCD.setText(s(row, 5)); // 🆕 load CCCD
+                    cboLoaiNV.setSelectedItem(s(row, 6));
                 }
             }
         });
@@ -255,8 +256,9 @@ public class ManQuanLiNhanVien extends JPanel {
                 fmt(dcNgaySinh.getDate()),
                 txtSDT.getText().trim(),
                 txtEmail.getText().trim(),
+                txtCCCD.getText().trim(),
                 cboLoaiNV.getSelectedItem(),
-                "", ""
+                ""
         };
         model.addRow(row);
         clearForm();
@@ -272,7 +274,8 @@ public class ManQuanLiNhanVien extends JPanel {
         model.setValueAt(fmt(dcNgaySinh.getDate()), row, 2);
         model.setValueAt(txtSDT.getText().trim(), row, 3);
         model.setValueAt(txtEmail.getText().trim(), row, 4);
-        model.setValueAt(cboLoaiNV.getSelectedItem(), row, 5);
+        model.setValueAt(txtCCCD.getText().trim(), row, 5); // 🆕 cập nhật CCCD
+        model.setValueAt(cboLoaiNV.getSelectedItem(), row, 6);
     }
 
     private void onXoa() {
@@ -280,8 +283,7 @@ public class ManQuanLiNhanVien extends JPanel {
         if (r < 0) { JOptionPane.showMessageDialog(this, "Chọn 1 dòng để xóa"); return; }
         int confirm = JOptionPane.showConfirmDialog(this, "Xóa nhân viên đã chọn?", "Xác nhận", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
-            int row = table.convertRowIndexToModel(r);
-            model.removeRow(row);
+            model.removeRow(table.convertRowIndexToModel(r));
             clearForm();
         }
     }
@@ -292,6 +294,7 @@ public class ManQuanLiNhanVien extends JPanel {
         dcNgaySinh.setDate(null);
         txtSDT.setText("");
         txtEmail.setText("");
+        txtCCCD.setText("");
         cboLoaiNV.setSelectedIndex(0);
         table.clearSelection();
     }
@@ -299,9 +302,10 @@ public class ManQuanLiNhanVien extends JPanel {
     private boolean validateForm() {
         if (txtMaNV.getText().isBlank()) { warn("Mã nhân viên không được trống"); return false; }
         if (txtTenNV.getText().isBlank()) { warn("Tên nhân viên không được trống"); return false; }
-        if (dcNgaySinh.getDate() == null)   { warn("Vui lòng chọn ngày sinh"); return false; }
+        if (dcNgaySinh.getDate() == null) { warn("Vui lòng chọn ngày sinh"); return false; }
         if (txtSDT.getText().isBlank()) { warn("Số điện thoại không được trống"); return false; }
         if (txtEmail.getText().isBlank()) { warn("Email không được trống"); return false; }
+        if (txtCCCD.getText().isBlank()) { warn("CCCD không được trống"); return false; } // 🆕 validate CCCD
         return true;
     }
 
@@ -320,17 +324,16 @@ public class ManQuanLiNhanVien extends JPanel {
         try { return txt == null || txt.isBlank() ? null : sdf.parse(txt); }
         catch (Exception e) { return null; }
     }
-    
-    //demo
-//    public static void main(String[] args) {
-//        SwingUtilities.invokeLater(() -> {
-//            try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception ignored) {}
-//            JFrame f = new JFrame("Quản Lý Nhân Viên");
-//            f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-//            f.setContentPane(new ManQuanLiNhanVien());
-//            f.setSize(1200, 700);
-//            f.setLocationRelativeTo(null);
-//            f.setVisible(true);
-//        });
-//    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception ignored) {}
+            JFrame f = new JFrame("Quản Lý Nhân Viên");
+            f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+            f.setContentPane(new ManQuanLiNhanVien());
+            f.setSize(1200, 700);
+            f.setLocationRelativeTo(null);
+            f.setVisible(true);
+        });
+    }
 }
