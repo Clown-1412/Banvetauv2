@@ -372,7 +372,7 @@ public class MainFrame extends JFrame {
         content.add(simplePanel("Khuyến mãi"),            "khuyenmai");
         content.add(new HanhKhachPanel(),                 "quanly_hành khách");
         content.add(simplePanel("Quản lý tài khoản"),     "quanly_taikhoan");
-        content.add(new QuanLyNhanVienPanel(),            "quanly_nhanvien");
+        content.add(new ManQuanLiNhanVien(),            "quanly_nhanvien");
         //content.add(simplePanel("Quản lý chuyến tàu"),     "quanly_chuyentau");
         content.add(new ManQuanLiChuyenTau(),             "quanly_chuyentau");
 
