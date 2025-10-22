@@ -339,8 +339,6 @@ public class ManQuanLiHanhKhach extends JPanel {
             cboGioiTinh.setSelectedIndex(0);
         }
         generateNextId();
-        btnSua.setEnabled(false);
-        btnXoa.setEnabled(false);
     }
 
     private void resetFormForNewEntry() {
