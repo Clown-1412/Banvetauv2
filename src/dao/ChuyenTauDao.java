@@ -13,9 +13,9 @@ import java.sql.Types;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import model.ChuyenTauThongTin;
-import model.Ga;
-import model.Tau;
+import entity.ChuyenTauThongTin;
+import entity.Ga;
+import entity.Tau;
 
 public class ChuyenTauDao {
 

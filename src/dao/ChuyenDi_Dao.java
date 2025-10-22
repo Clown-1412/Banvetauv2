@@ -1,7 +1,7 @@
 package dao;
 
 import connectDB.ConnectDB;
-import model.ChuyenTau;
+import entity.ChuyenTau;
 
 import java.sql.*;
 import java.util.ArrayList;

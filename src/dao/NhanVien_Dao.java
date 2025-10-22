@@ -1,7 +1,7 @@
 package dao;
 
 import connectDB.ConnectDB;
-import model.*;
+import entity.*;
 
 import java.sql.*;
 import java.time.LocalDate;
