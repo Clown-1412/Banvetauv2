@@ -1,6 +1,6 @@
 package main;
 
-import UI.LoginFrame;
+import ui.LoginFrame;
 import javax.swing.*;
 import javax.swing.border.Border;
 
