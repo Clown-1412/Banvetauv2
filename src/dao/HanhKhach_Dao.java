@@ -65,7 +65,7 @@ public class HanhKhach_Dao {
             ps.setString(2, hk.getTenHK());
             ps.setString(3, hk.getSoDienThoai());
             ps.setString(4, hk.getCccd());
-            ps.setString(4, hk.getMaGT());
+            ps.setString(5, hk.getMaGT());
             return ps.executeUpdate();
         }
     }
