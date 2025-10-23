@@ -1,4 +1,4 @@
-package model;
+package entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 /**
  * Mô hình dữ liệu đại diện một chuyến tàu dùng cho màn hình tra cứu.
  */
-public class ChuyenTau {
+public class ChuyenDi {
     private final String maChuyenTau;
     private final String gaDi;
     private final String gaDen;
@@ -14,11 +14,10 @@ public class ChuyenTau {
     private final LocalDateTime thoiGianKetThuc;
     private final String tenTau;
     private int soGheTrong;
-    private int quangDuongDiChuyen;
 
     
 //constructor
-public ChuyenTau(String maChuyenTau, String gaDi, String gaDen,
+public ChuyenDi(String maChuyenTau, String gaDi, String gaDen,
                 LocalDateTime thoiGianKhoiHanh, LocalDateTime thoiGianKetThuc,
                 String tenTau, int soGheTrong)
 
@@ -30,8 +29,6 @@ public ChuyenTau(String maChuyenTau, String gaDi, String gaDen,
         this.thoiGianKetThuc = thoiGianKetThuc;
         this.tenTau = tenTau;
         this.soGheTrong = soGheTrong;
-        this.quangDuongDiChuyen = quangDuongDiChuyen; 
-        
     }
 
     public String getMaChuyenTau() {
@@ -64,13 +61,5 @@ public ChuyenTau(String maChuyenTau, String gaDi, String gaDen,
 
     public void setSoGheTrong(int soGheTrong) {
         this.soGheTrong = soGheTrong;
-    }
-    
-    public int getQuangDuongDiChuyen(){
-        return quangDuongDiChuyen;
-    }
-    
-    public void setQuangDuongDiChuyen(int quangDuongDiChuyen){
-        this.quangDuongDiChuyen = quangDuongDiChuyen;
     }
 }

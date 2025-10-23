@@ -21,9 +21,10 @@ public class Main {
         SwingUtilities.invokeLater(() -> new LoginFrame().setVisible(true));
     }
 }
+
 //package main;
 //
-//import UI.LoginFrame;
+//import ui.LoginFrame;
 //import javax.swing.*;
 //
 //public class Main {
@@ -41,4 +42,4 @@ public class Main {
 //        
 //    }
 //}
-
+//
