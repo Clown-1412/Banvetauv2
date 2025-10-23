@@ -24,6 +24,7 @@ public class LoginFrame extends JFrame {
         setTitle("Hệ thống bán vé tàu đường sắt Sài Gòn");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(960, 600);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
 
         defaultEchoChar = txtPass.getEchoChar();

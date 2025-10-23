@@ -51,6 +51,7 @@ public class MainFrame extends JFrame {
         setTitle("Đường sắt Sài Gòn - Hệ thống bán vé");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1200, 750);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
 
         JPanel sidebar = buildSidebar();      // << menu mới nền sáng, không header admin
@@ -127,7 +128,7 @@ public class MainFrame extends JFrame {
         // --------- Danh mục ----------
         JToggleButton btnDanhMuc = makeToggle("Danh mục");
         JPanel dmGroup = groupPanel(
-            makeChild("Khuyến mãi", () -> cardLayout.show(content, "khuyenmai")),
+            makeChild("Quản lí khuyến mãi", () -> cardLayout.show(content, "khuyenmai")),
             makeChild("Quản lí tài khoản",  () -> cardLayout.show(content, "quanly_taikhoan")),
             makeChild("Quản lí Nhân viên",  () -> cardLayout.show(content, "quanly_nhanvien")),
             makeChild("Quản lý chuyến tàu",  () -> cardLayout.show(content, "quanly_chuyentau")),
@@ -157,7 +158,7 @@ public class MainFrame extends JFrame {
             makeChild("Tìm kiếm khách hàng", () -> cardLayout.show(content, "timkiem_khachhang")),
             makeChild("Tìm kiếm nhân viên",  () -> cardLayout.show(content, "timkiem_nhanvien")),
             makeChild("Tìm kiếm hóa đơn",    () -> cardLayout.show(content, "timkiem_hoadon")),
-            makeChild("Tra cứu khuyến mãi",   () -> cardLayout.show(content, "timkiem_khuyenmai"))
+            makeChild("Tìm kiếm khuyến mãi",   () -> cardLayout.show(content, "timkiem_khuyenmai"))
         );
         btnSearch.addActionListener(e -> { searchGroup.setVisible(btnSearch.isSelected()); menu.revalidate(); menu.repaint(); });
         menu.add(btnSearch);
@@ -369,9 +370,9 @@ public class MainFrame extends JFrame {
         content.add(new DoiVe(), "doive");
         content.add(new TraVe(), "trave");
 
-        content.add(simplePanel("Khuyến mãi"),            "khuyenmai");
+        content.add(new KhuyenMaiPanel(),            "khuyenmai");
         content.add(new ManQuanLiHanhKhach(),                 "quanly_hành khách");
-        content.add(simplePanel("Quản lý tài khoản"),     "quanly_taikhoan");
+        content.add(new QuanLyTaiKhoanPanel(),     "quanly_taikhoan");
         content.add(new ManQuanLiNhanVien(),            "quanly_nhanvien");
         //content.add(simplePanel("Quản lý chuyến tàu"),     "quanly_chuyentau");
         content.add(new ManQuanLiChuyenTau(),             "quanly_chuyentau");
@@ -380,7 +381,7 @@ public class MainFrame extends JFrame {
         content.add(simplePanel("Tìm kiếm khách hàng"),   "timkiem_khachhang");
         content.add(simplePanel("Tìm kiếm nhân viên"),    "timkiem_nhanvien");
         content.add(simplePanel("Tìm kiếm hóa đơn"),      "timkiem_hoadon");
-        content.add(simplePanel("Tra cứu khuyến mãi"),    "timkiem_khuyenmai");
+        content.add(new TimKiemKhuyenMaiPanel(),    "timkiem_khuyenmai");
 
         content.add(simplePanel("Thống kê"),  "thongke_doanhthu");
     }
