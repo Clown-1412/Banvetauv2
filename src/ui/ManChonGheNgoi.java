@@ -5,6 +5,7 @@ import javax.swing.border.*;
 import javax.swing.plaf.basic.BasicToggleButtonUI;
 import java.awt.*;
 import java.util.*;
+import javax.swing.plaf.basic.BasicButtonUI;
 
 public class ManChonGheNgoi extends JPanel {
 
@@ -68,36 +69,34 @@ public class ManChonGheNgoi extends JPanel {
         add(root, BorderLayout.CENTER);
     }
 
-    // ---------------- Step Bar ----------------
+    // ---------------- Step Bar (full width 3 cột) ----------------
     private JComponent buildStepBar() {
-        JPanel p = new JPanel(new GridBagLayout());
-        p.setBackground(Color.WHITE);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(0, 8, 0, 8);
+        JPanel bar = new JPanel(new GridLayout(1, 3, 8, 0));
+        bar.setBackground(Color.WHITE);
+        bar.setBorder(new EmptyBorder(0, 0, 8, 0));
 
-        p.add(stepButton("1", "CHỌN CHUYẾN", false), gbc);
-        p.add(stepButton("2", "CHI TIẾT VÉ", true), gbc);
-        p.add(stepButton("3", "THANH TOÁN", false), gbc);
-
-        return p;
+        bar.add(makeStep("1  CHỌN CHUYẾN", false));
+        bar.add(makeStep("2  CHI TIẾT VÉ", true));   // xanh - active
+        bar.add(makeStep("3  THANH TOÁN", false));
+        return bar;
     }
 
-    private JComponent stepButton(String index, String text, boolean active) {
-        JButton b = new JButton(index + "  " + text);
-        b.setFocusPainted(false);
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        b.setFont(b.getFont().deriveFont(Font.BOLD, 14f));
-        b.setBorder(new EmptyBorder(10, 18, 10, 18));
-        b.setEnabled(false);
+    private JComponent makeStep(String text, boolean active) {
+        JLabel l = new JLabel(text, SwingConstants.CENTER);
+        l.setOpaque(true); // phải có để background hiển thị
+        l.setFont(l.getFont().deriveFont(Font.BOLD, 14f));
+        l.setBorder(new CompoundBorder(
+                new LineBorder(new Color(210,210,210)),
+                new EmptyBorder(12, 0, 12, 0)
+        ));
         if (active) {
-            b.setBackground(BLUE_PRIMARY);
-            b.setForeground(Color.WHITE);
+            l.setBackground(BLUE_PRIMARY);
+            l.setForeground(Color.WHITE);
         } else {
-            b.setBackground(new Color(0xEEEEEE));
-            b.setForeground(Color.DARK_GRAY);
+            l.setBackground(new Color(0xE0E0E0));
+            l.setForeground(Color.DARK_GRAY);
         }
-        b.setBorder(new CompoundBorder(new LineBorder(new Color(210,210,210)), b.getBorder()));
-        return b;
+        return l;
     }
 
     // ---------------- LEFT: Chọn vị trí ----------------
@@ -367,6 +366,29 @@ public class ManChonGheNgoi extends JPanel {
     }
 
     // ---------------- RIGHT: Thông tin khách hàng ----------------
+    
+        private JButton solidButton(String text, Color bg, Color fg) {
+        JButton b = new JButton(text);
+        b.setUI(new BasicButtonUI());            // bỏ LAF mặc định (khỏi tẩy trắng)
+        b.setOpaque(true);
+        b.setContentAreaFilled(true);
+        b.setBorderPainted(false);
+        b.setFocusPainted(false);
+        b.setBackground(bg);
+        b.setForeground(fg);
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        b.setBorder(new EmptyBorder(8, 20, 8, 20));
+
+        // hover/press nhẹ
+        b.getModel().addChangeListener(e -> {
+            ButtonModel m = b.getModel();
+            if (m.isPressed())      b.setBackground(bg.darker());
+            else if (m.isRollover()) b.setBackground(bg.brighter());
+            else                     b.setBackground(bg);
+        });
+        return b;
+    }
+    
     private JComponent buildRight() {
         JPanel right = new JPanel(new BorderLayout(8, 8));
         right.setBackground(Color.WHITE);
@@ -464,7 +486,7 @@ public class ManChonGheNgoi extends JPanel {
         title.setForeground(RED_PRIMARY);
         title.setFont(title.getFont().deriveFont(Font.BOLD, 13.5f));
 
-        JButton quick = new JButton("Điền nhanh");
+        JButton quick = solidButton("Điền nhanh", GREEN_SOFT, Color.WHITE);
         quick.setFocusPainted(false);
         quick.setBackground(GREEN_SOFT);
         quick.setForeground(Color.WHITE);
@@ -509,13 +531,13 @@ public class ManChonGheNgoi extends JPanel {
         JPanel p = new JPanel(new FlowLayout(FlowLayout.CENTER, 16, 8));
         p.setBackground(Color.WHITE);
 
-        JButton back = new JButton("Quay Lại");
+        JButton back = solidButton("Quay Lại", new Color(0x64B5F6), Color.WHITE);
         back.setBackground(new Color(0x64B5F6));
         back.setForeground(Color.WHITE);
         back.setFocusPainted(false);
         back.setBorder(new EmptyBorder(8, 20, 8, 20));
 
-        JButton next = new JButton("Tiếp Tục");
+        JButton next = solidButton("Tiếp Tục", GREEN_PRIMARY, Color.WHITE);
         next.setBackground(GREEN_PRIMARY);
         next.setForeground(Color.WHITE);
         next.setFocusPainted(false);
