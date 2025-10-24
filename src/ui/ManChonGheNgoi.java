@@ -1,11 +1,27 @@
 package ui;
 
+import dao.SeatMapDao;
+import entity.Ghe;
+import entity.KhoangTau;
+import entity.ToaTau;
+
+import java.sql.*;
 import javax.swing.*;
 import javax.swing.border.*;
+import javax.swing.plaf.basic.BasicButtonUI;
 import javax.swing.plaf.basic.BasicToggleButtonUI;
 import java.awt.*;
-import java.util.*;
-import javax.swing.plaf.basic.BasicButtonUI;
+import java.awt.event.ActionListener;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 public class ManChonGheNgoi extends JPanel {
 
@@ -20,6 +36,7 @@ public class ManChonGheNgoi extends JPanel {
     private static final Color SEAT_FREE      = new Color(0xBFE3FF);
     private static final Color SEAT_SELECTED  = new Color(0xFF6F61);
     private static final Color SEAT_SOLD      = new Color(0xBDBDBD);
+    private static final Color SEAT_TEXT      = new Color(0x174A7A);
     private static final Color COMPART_BAR    = new Color(0x214A7A); // thanh ngăn khoang (đậm)
     private static final Color TOA_BORDER     = new Color(0x205A9B); // viền toa
 
@@ -29,6 +46,18 @@ public class ManChonGheNgoi extends JPanel {
     private static final float SEAT_FONT_PT = 10.5f;
     private static final int   SEAT_GAP = 8;          // khoảng cách giữa các nút
     private static final int   SEAT_INNER_PAD = 1;    // đệm trong
+    
+    private final JLabel routeLabel = new JLabel();
+    private final JPanel carListPanel = new JPanel();
+    private final SeatMapDao seatMapDao = new SeatMapDao();
+    private final Map<JToggleButton, SeatSelection> seatBinding = new HashMap<>();
+    private final Set<SeatSelection> selectedSeats = new LinkedHashSet<>();
+    private List<ToaTau> currentCars = Collections.emptyList();
+    private JButton btnBack;
+    private JButton btnNext;
+    private SeatSelectionListener seatSelectionListener;
+    private boolean updatingSelection;
+
 
     public ManChonGheNgoi() {
         setLayout(new BorderLayout());
@@ -105,14 +134,14 @@ public class ManChonGheNgoi extends JPanel {
         left.setBackground(Color.WHITE);
 
         // Tiêu đề tuyến
-        JLabel route = new JLabel("  Tuyến An Hòa -> Bảo Sơn, Ngày 14/06 16:47");
-        route.setOpaque(true);
-        route.setBackground(new Color(0xE8F0FE));
-        route.setForeground(new Color(0x1565C0));
-        route.setFont(route.getFont().deriveFont(Font.BOLD, 14f));
-        route.setBorder(new CompoundBorder(new LineBorder(BLUE_BORDER),
+        routeLabel.setOpaque(true);
+        routeLabel.setBackground(new Color(0xE8F0FE));
+        routeLabel.setForeground(new Color(0x1565C0));
+        routeLabel.setFont(routeLabel.getFont().deriveFont(Font.BOLD, 14f));
+        routeLabel.setBorder(new CompoundBorder(new LineBorder(BLUE_BORDER),
                 new EmptyBorder(10, 10, 10, 10)));
-        left.add(route, BorderLayout.NORTH);
+        routeLabel.setText("  Tuyến ...");
+        left.add(routeLabel, BorderLayout.NORTH);
 
         JPanel center = new JPanel();
         center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
@@ -133,21 +162,17 @@ public class ManChonGheNgoi extends JPanel {
         legend.add(legendItem(new Color(0x81C784), "Giường Nằm Khoang 4 Điều Hòa"));
         legend.add(legendItem(SEAT_FREE, "Ghế Ngồi Mềm Điều Hòa"));
         legend.add(legendItem(SEAT_SELECTED, "Ghế Đang Chọn"));
-        legend.add(legendItem(SEAT_SOLD, "Ghế Đã Chọn"));
+        legend.add(legendItem(SEAT_SOLD, "Ghế Đã Bán"));
         legend.setBorder(new CompoundBorder(new LineBorder(new Color(230,230,230)),
                 new EmptyBorder(8, 8, 8, 8)));
         center.add(legend);
 
         // ======= Danh sách toa (cuộn) =======
-        JPanel list = new JPanel();
-        list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
-        list.setBackground(Color.WHITE);
+        carListPanel.setLayout(new BoxLayout(carListPanel, BoxLayout.Y_AXIS));
+        carListPanel.setBackground(Color.WHITE);
+        carListPanel.add(emptyMessage("Chưa có dữ liệu. Vui lòng chọn chuyến tàu."));
 
-        list.add(new ToaPanel("Toa số 1: Ngồi mềm điều hòa", 1));
-        list.add(Box.createVerticalStrut(14));
-        list.add(new ToaPanel("Toa số 2: Ngồi mềm điều hòa", 37));
-
-        JScrollPane sp = new JScrollPane(list);
+        JScrollPane sp = new JScrollPane(carListPanel);
         sp.setBorder(new CompoundBorder(new LineBorder(new Color(230,230,230)), new EmptyBorder(0,0,0,0)));
         sp.getVerticalScrollBar().setUnitIncrement(18);
 
@@ -173,24 +198,55 @@ public class ManChonGheNgoi extends JPanel {
         return p;
     }
 
-    // ================== TOA PANEL (6 khoang) ==================
+    private JComponent emptyMessage(String text) {
+        JLabel label = new JLabel(text, SwingConstants.CENTER);
+        label.setForeground(new Color(120, 120, 120));
+        label.setBorder(new EmptyBorder(20, 0, 20, 0));
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setOpaque(false);
+        wrapper.add(label, BorderLayout.CENTER);
+        return wrapper;
+    }
+
+    private void renderSeatMap(List<ToaTau> cars) {
+        seatBinding.clear();
+        selectedSeats.clear();
+        carListPanel.removeAll();
+
+        if (cars == null || cars.isEmpty()) {
+            carListPanel.add(emptyMessage("Không tìm thấy dữ liệu toa tàu."));
+        } else {
+            for (int i = 0; i < cars.size(); i++) {
+                carListPanel.add(new ToaPanel(cars.get(i)));
+                if (i < cars.size() - 1) {
+                    carListPanel.add(Box.createVerticalStrut(14));
+                }
+            }
+        }
+
+        carListPanel.revalidate();
+        carListPanel.repaint();
+        updateNextButtonState();
+    }
+
+    // ================== TOA PANEL (6/7 khoang) ==================
     private class ToaPanel extends JPanel {
-        ToaPanel(String title, int startSeatNumber) {
+        ToaPanel(ToaTau toa) {
             setOpaque(false);
             setLayout(new BorderLayout());
 
-            // Header giữa
-            JLabel t = new JLabel(title, SwingConstants.CENTER);
+            String type = toa.getSoToa() % 2 == 0 ? "Giường nằm điều hòa" : "Ngồi mềm điều hòa";
+            JLabel t = new JLabel("Toa số " + toa.getSoToa() + ": " + type, SwingConstants.CENTER);
             t.setFont(t.getFont().deriveFont(Font.BOLD, 14f));
             t.setForeground(new Color(0x1E88E5));
             t.setBorder(new EmptyBorder(4, 0, 8, 0));
             add(t, BorderLayout.NORTH);
 
-            // Khung bo góc dày xung quanh toa
+
             JPanel rounded = new RoundedBorderPanel();
             rounded.setLayout(new BorderLayout());
             rounded.setOpaque(false);
-            rounded.setBorder(new EmptyBorder(8, 10, 8, 10)); // padding trong toa
+            rounded.setBorder(new EmptyBorder(8, 10, 8, 10));
 
             // Hàng khoang: 6 khoang nằm ngang
             JPanel row = new JPanel();
@@ -199,15 +255,14 @@ public class ManChonGheNgoi extends JPanel {
             row.setAlignmentX(Component.CENTER_ALIGNMENT);
 
             // sinh 6 khoang; mỗi khoang 6 ghế (2x3)
-            int seat = startSeatNumber;
-            for (int k = 1; k <= 6; k++) {
-                if (k > 1) {
+            List<KhoangTau> khoangs = toa.getDanhSachKhoang();
+            for (int i = 0; i < khoangs.size(); i++) {
+                if (i > 0) {
                     row.add(Box.createHorizontalStrut(6));
                     row.add(new CompartmentSeparator());
                     row.add(Box.createHorizontalStrut(6));
                 }
-                row.add(new KhoangPanel("Khoang " + k, seat));
-                seat += 6;
+                row.add(new KhoangPanel(toa, khoangs.get(i)));
             }
 
             rounded.add(row, BorderLayout.CENTER);
@@ -216,20 +271,20 @@ public class ManChonGheNgoi extends JPanel {
     }
 
     // Panel vẽ đường viền bo góc dày cho TOA
-    private class RoundedBorderPanel extends JPanel {
+    private static class RoundedBorderPanel extends JPanel {
         RoundedBorderPanel() { setOpaque(false); }
         @Override protected void paintComponent(Graphics g) {
-    super.paintComponent(g);
-    Graphics2D g2 = (Graphics2D) g.create();
-    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-    int arc = 20; // bo nhẹ hơn một chút cho cân đối
-    int pad = 3;  // giảm offset từ 6 xuống 3 để thu hẹp khoảng trống
-    g2.setColor(Color.WHITE);
-    g2.fillRoundRect(pad, pad, getWidth() - pad * 2, getHeight() - pad * 2, arc, arc);
-    g2.setColor(TOA_BORDER);
-    g2.setStroke(new BasicStroke(3.0f)); // viền mảnh hơn 1 chút
-    g2.drawRoundRect(pad, pad, getWidth() - pad * 2, getHeight() - pad * 2, arc, arc);
-    g2.dispose();
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int arc = 20;
+            int pad = 3;
+            g2.setColor(Color.WHITE);
+            g2.fillRoundRect(pad, pad, getWidth() - pad * 2, getHeight() - pad * 2, arc, arc);
+            g2.setColor(TOA_BORDER);
+            g2.setStroke(new BasicStroke(3.0f));
+            g2.drawRoundRect(pad, pad, getWidth() - pad * 2, getHeight() - pad * 2, arc, arc);
+            g2.dispose();
         }
     }
 
@@ -237,9 +292,8 @@ public class ManChonGheNgoi extends JPanel {
     private class CompartmentSeparator extends JComponent {
         private static final int BAR_W = 6;
 
-        // cao ≈ 3 hàng * chiều cao nút + (mỗi nút có top/bottom = SEAT_GAP)
         private int barHeight() {
-            return 3 * SEAT_H + 6 * SEAT_GAP + 4; // +4px đệm
+            return 3 * SEAT_H + 6 * SEAT_GAP + 4;
         }
 
         @Override public Dimension getPreferredSize() {
@@ -247,7 +301,6 @@ public class ManChonGheNgoi extends JPanel {
         }
 
         @Override public Dimension getMaximumSize() {
-            // không cho BoxLayout kéo giãn theo chiều dọc
             return getPreferredSize();
         }
 
@@ -259,14 +312,13 @@ public class ManChonGheNgoi extends JPanel {
             g2.dispose();
         }
     }
-
-    // Một khoang: nhãn + lưới 3x2 (6 ghế) dùng GridBagLayout để không kéo giãn nút
+    // Một khoang: nhãn + lưới 3x2 (6 ghế)
     private class KhoangPanel extends JPanel {
-        KhoangPanel(String title, int startSeat) {
+        KhoangPanel(ToaTau toa, KhoangTau khoang) {
             setOpaque(false);
             setLayout(new BorderLayout(4, 4));
 
-            JLabel l = new JLabel(title, SwingConstants.CENTER);
+            JLabel l = new JLabel("Khoang " + khoang.getTenKhoangTau(), SwingConstants.CENTER);
             l.setForeground(new Color(0x607D8B));
             l.setFont(l.getFont().deriveFont(Font.PLAIN, 12f));
             add(l, BorderLayout.NORTH);
@@ -279,17 +331,22 @@ public class ManChonGheNgoi extends JPanel {
             gc.fill = GridBagConstraints.NONE;
             gc.weightx = 0; gc.weighty = 0;
 
-            // 3 hàng x 2 cột
+            List<Ghe> gheList = khoang.getDanhSachGhe();
             for (int r = 0; r < 3; r++) {
                 for (int c = 0; c < 2; c++) {
-                    int seatNumber = startSeat + r*2 + c;
+                    int idx = r * 2 + c;
+                    if (idx >= gheList.size()) {
+                        break;
+                    }
+                    Ghe ghe = gheList.get(idx);
+                    SeatSelection seat = new SeatSelection(toa, khoang, ghe);
                     gc.gridx = c; gc.gridy = r;
-                    grid.add(seatButton(seatNumber, false, false), gc);
+                    grid.add(seatButton(seat), gc);
                 }
             }
             add(grid, BorderLayout.CENTER);
 
-            setBorder(new EmptyBorder(6, 6, 6, 6)); // padding quanh khoang
+            setBorder(new EmptyBorder(6, 6, 6, 6));
         }
     }
 
@@ -322,12 +379,13 @@ public class ManChonGheNgoi extends JPanel {
         }
     }
 
-    private JToggleButton seatButton(int number, boolean selected, boolean sold) {
-        JToggleButton b = new SeatButton(String.valueOf(number), selected, /*arc:*/ 12);
+    private JToggleButton seatButton(SeatSelection seat) {
+        String label = seatLabel(seat);
+        JToggleButton b = new SeatButton(label, false, 12);
         Dimension d = new Dimension(SEAT_W, SEAT_H);
         b.setPreferredSize(d);
-        b.setMinimumSize(d);                     // khóa không cho nhỏ hơn
-        b.setMaximumSize(d);                     // khóa không cho kéo giãn
+        b.setMinimumSize(d);
+        b.setMaximumSize(d);
         b.setFont(b.getFont().deriveFont(Font.BOLD, SEAT_FONT_PT));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -341,35 +399,60 @@ public class ManChonGheNgoi extends JPanel {
         b.setBorder(BorderFactory.createEmptyBorder(SEAT_INNER_PAD, SEAT_INNER_PAD,
                                                    SEAT_INNER_PAD, SEAT_INNER_PAD));
 
-        if (sold) {
+        seatBinding.put(b, seat);
+
+        if (seat.getGhe().isDaDat()) {
             b.setBackground(SEAT_SOLD);
             b.setForeground(Color.DARK_GRAY);
             b.setEnabled(false);
-        } else if (selected) {
-            b.setBackground(SEAT_SELECTED);
-            b.setForeground(Color.WHITE);
+
         } else {
             b.setBackground(SEAT_FREE);
-            b.setForeground(new Color(0x174A7A));
+            b.setForeground(SEAT_TEXT);
+            b.addItemListener(e -> {
+                if (updatingSelection) return;
+                if (b.isSelected()) {
+                    b.setBackground(SEAT_SELECTED);
+                    b.setForeground(Color.WHITE);
+                    selectedSeats.add(seat);
+                    notifySeatSelected(seat);
+                } else {
+                    b.setBackground(SEAT_FREE);
+                    b.setForeground(SEAT_TEXT);
+                    selectedSeats.remove(seat);
+                    notifySeatDeselected(seat);
+                }
+                updateNextButtonState();
+            });
         }
-
-        b.addItemListener(e -> {
-            if (b.isSelected()) {
-                b.setBackground(SEAT_SELECTED);
-                b.setForeground(Color.WHITE);
-            } else {
-                b.setBackground(SEAT_FREE);
-                b.setForeground(new Color(0x174A7A));
-            }
-        });
         return b;
+    }
+    
+    private String seatLabel(SeatSelection seat) {
+        int display = seat.getSeatDisplayNumber();
+        if (display > 0) {
+            return String.valueOf(display);
+        }
+        return seat.getGhe().getSoGhe();
+    }
+
+    private void notifySeatSelected(SeatSelection seat) {
+            if (seatSelectionListener != null) {
+                seatSelectionListener.seatSelected(seat);
+            }
+    }
+
+    private void notifySeatDeselected(SeatSelection seat) {
+            if (seatSelectionListener != null) {
+                seatSelectionListener.seatDeselected(seat);
+            }
     }
 
     // ---------------- RIGHT: Thông tin khách hàng ----------------
     
-        private JButton solidButton(String text, Color bg, Color fg) {
+    private JButton solidButton(String text, Color bg, Color fg) {
         JButton b = new JButton(text);
-        b.setUI(new BasicButtonUI());            // bỏ LAF mặc định (khỏi tẩy trắng)
+        b.setUI(new BasicButtonUI());
         b.setOpaque(true);
         b.setContentAreaFilled(true);
         b.setBorderPainted(false);
@@ -531,23 +614,160 @@ public class ManChonGheNgoi extends JPanel {
         JPanel p = new JPanel(new FlowLayout(FlowLayout.CENTER, 16, 8));
         p.setBackground(Color.WHITE);
 
-        JButton back = solidButton("Quay Lại", new Color(0x64B5F6), Color.WHITE);
-        back.setBackground(new Color(0x64B5F6));
-        back.setForeground(Color.WHITE);
-        back.setFocusPainted(false);
-        back.setBorder(new EmptyBorder(8, 20, 8, 20));
+        btnBack = solidButton("Quay Lại", new Color(0x64B5F6), Color.WHITE);
+        btnBack.setBackground(new Color(0x64B5F6));
+        btnBack.setForeground(Color.WHITE);
+        btnBack.setFocusPainted(false);
+        btnBack.setBorder(new EmptyBorder(8, 20, 8, 20));
 
-        JButton next = solidButton("Tiếp Tục", GREEN_PRIMARY, Color.WHITE);
-        next.setBackground(GREEN_PRIMARY);
-        next.setForeground(Color.WHITE);
-        next.setFocusPainted(false);
-        next.setBorder(new EmptyBorder(8, 20, 8, 20));
+        btnNext = solidButton("Tiếp Tục", GREEN_PRIMARY, Color.WHITE);
+        btnNext.setBackground(GREEN_PRIMARY);
+        btnNext.setForeground(Color.WHITE);
+        btnNext.setFocusPainted(false);
+        btnNext.setBorder(new EmptyBorder(8, 20, 8, 20));
+        btnNext.setEnabled(false);
 
-        p.add(back);
-        p.add(next);
+        p.add(btnBack);
+        p.add(btnNext);
         return p;
     }
 
+    private void updateNextButtonState() {
+        if (btnNext != null) {
+            btnNext.setEnabled(!selectedSeats.isEmpty());
+        }
+    }
+    // ===================== Public API =====================
+
+    public void setRoute(String gaDi, String gaDen, LocalDate ngay) {
+        if (gaDi == null || gaDen == null) {
+            routeLabel.setText("  Tuyến ...");
+            return;
+        }
+        String dateText = ngay != null ? ngay.format(DateTimeFormatter.ofPattern("dd/MM")) : "";
+        routeLabel.setText("  Tuyến " + gaDi + " -> " + gaDen + (dateText.isEmpty() ? "" : ", Ngày " + dateText));
+    }
+
+    public boolean loadSeatMap(String maChuyenTau) {
+        try {
+            currentCars = seatMapDao.loadSeatMap(maChuyenTau);
+            renderSeatMap(currentCars);
+            return true;
+        } catch (SQLException ex) {
+            currentCars = Collections.emptyList();
+            renderSeatMap(currentCars);
+            JOptionPane.showMessageDialog(this,
+                    "Không thể tải sơ đồ ghế từ cơ sở dữ liệu. Vui lòng kiểm tra kết nối.",
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
+
+    public int getCarCount() {
+        return currentCars != null ? currentCars.size() : 0;
+    }
+
+    public void setSeatSelectionListener(SeatSelectionListener listener) {
+        this.seatSelectionListener = listener;
+    }
+
+    public List<SeatSelection> getSelectedSeats() {
+        return new ArrayList<>(selectedSeats);
+    }
+
+    public void clearSelection() {
+        updatingSelection = true;
+        for (Map.Entry<JToggleButton, SeatSelection> entry : seatBinding.entrySet()) {
+            JToggleButton btn = entry.getKey();
+            if (btn.isEnabled()) {
+                btn.setSelected(false);
+                btn.setBackground(SEAT_FREE);
+                btn.setForeground(SEAT_TEXT);
+            }
+        }
+        selectedSeats.clear();
+        updatingSelection = false;
+        updateNextButtonState();
+    }
+
+    public void addBackActionListener(ActionListener listener) {
+        if (btnBack != null) {
+            btnBack.addActionListener(listener);
+        }
+    }
+
+    public void addNextActionListener(ActionListener listener) {
+        if (btnNext != null) {
+            btnNext.addActionListener(listener);
+        }
+    }
+
+    // ===================== Seat Selection model =====================
+    public interface SeatSelectionListener {
+        void seatSelected(SeatSelection seat);
+        void seatDeselected(SeatSelection seat);
+    }
+
+    public static class SeatSelection {
+        private final int soToa;
+        private final String maToa;
+        private final String tenKhoang;
+        private final String maKhoang;
+        private final Ghe ghe;
+
+        SeatSelection(ToaTau toa, KhoangTau khoang, Ghe ghe) {
+            this.soToa = toa.getSoToa();
+            this.maToa = toa.getMaToa();
+            this.tenKhoang = khoang.getTenKhoangTau();
+            this.maKhoang = khoang.getMaKhoangTau();
+            this.ghe = ghe;
+        }
+
+        public int getSoToa() {
+            return soToa;
+        }
+
+        public String getMaToa() {
+            return maToa;
+        }
+
+        public String getTenKhoang() {
+            return tenKhoang;
+        }
+
+        public String getMaKhoang() {
+            return maKhoang;
+        }
+
+        public Ghe getGhe() {
+            return ghe;
+        }
+
+        public int getSeatDisplayNumber() {
+            int order = ghe.getThuTuHienThi();
+            if (order > 0) {
+                return order;
+            }
+            return ghe.getSoGheAsInt();
+        }
+
+        public String getMaGhe() {
+            return ghe.getMaGhe();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof SeatSelection)) return false;
+            SeatSelection that = (SeatSelection) o;
+            return Objects.equals(ghe.getMaGhe(), that.ghe.getMaGhe());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(ghe.getMaGhe());
+        }
+    }
     public static void main(String[] args) {
         try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception ignore) {}
         SwingUtilities.invokeLater(() -> {
@@ -558,7 +778,7 @@ public class ManChonGheNgoi extends JPanel {
             frame.setSize(new Dimension(1200, 720));
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
-            frame.setExtendedState(JFrame.MAXIMIZED_BOTH); // mở tối đa ngay
+            frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         });
     }
 }

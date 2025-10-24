@@ -10,13 +10,13 @@ import java.util.List;
 import java.text.NumberFormat;
 import com.toedter.calendar.JDateChooser;
 import dao.ChuyenDi_Dao;
-import entity.ChuyenDi;
 import entity.ChuyenTau;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 public class BanVe extends JPanel {
 
@@ -28,12 +28,12 @@ public class BanVe extends JPanel {
     private final JPanel cards = new JPanel(wizard);
 
     private final ChooseTripPage page1 = new ChooseTripPage();
-    private final TicketDetailPage page2 = new TicketDetailPage();
+    private final ManChonGheNgoi page2 = new ManChonGheNgoi();
     private final PaymentPage page3 = new PaymentPage();
 
     private TrainInfo currentTrain;
-    private int currentCarIndex = 1;
     private final List<TicketSelection> selections = new ArrayList<>();
+    private TripSelectPanel.Trip selectedTrip;
 
     public BanVe() {
         setLayout(new BorderLayout());
@@ -46,6 +46,9 @@ public class BanVe extends JPanel {
         cards.add(page2, "p2");
         cards.add(page3, "p3");
         add(cards, BorderLayout.CENTER);
+        
+        page2.addBackActionListener(e -> showStep(1));
+        page2.addNextActionListener(e -> handleSeatSelectionNext());
 
         showStep(1);
     }
@@ -53,7 +56,7 @@ public class BanVe extends JPanel {
     private void showStep(int step) {
         switch (step) {
             case 1 -> wizard.show(cards, "p1");
-            case 2 -> { page2.refresh(); wizard.show(cards, "p2"); }
+            case 2 -> wizard.show(cards, "p2");
             case 3 -> { page3.refresh(); wizard.show(cards, "p3"); }
         }
     }
@@ -120,9 +123,9 @@ public class BanVe extends JPanel {
                 resultPanel.setContext(gaDi, gaDen, ngay);
                 resultPanel.setTrips(trips);
                 resultPanel.onBack(evt -> subCards.show(subPanel, "search"));
-                resultPanel.onChooseTrip(evt -> {
-                    // Chuyển bước tiếp theo (chưa tích hợp chọn ghế)
-                    showStep(2);
+                resultPanel.setTripSelectionListener(trip -> {
+                    handleTripSelection(trip);
+                    subCards.show(subPanel, "result");
                 });
 
                 subCards.show(subPanel, "result");
@@ -132,6 +135,66 @@ public class BanVe extends JPanel {
 
 
     // ======================= PAGE 2 =======================
+    private void handleTripSelection(TripSelectPanel.Trip trip) {
+        if (trip == null) {
+            return;
+        }
+        selectedTrip = trip;
+        selections.clear();
+        page2.clearSelection();
+
+        LocalDate ngayDi = trip.depart != null ? trip.depart.toLocalDate() : null;
+        page2.setRoute(trip.departStation, trip.arriveStation, ngayDi);
+
+        boolean loaded = page2.loadSeatMap(trip.code);
+        if (!loaded) {
+            return;
+        }
+
+        DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("HH:mm");
+        currentTrain = new TrainInfo(
+                trip.code,
+                trip.depart != null ? trip.depart.format(timeFmt) : "",
+                trip.arrive != null ? trip.arrive.format(timeFmt) : "",
+                trip.departStation + " -> " + trip.arriveStation,
+                page2.getCarCount()
+        );
+
+        showStep(2);
+    }
+
+    private void handleSeatSelectionNext() {
+        List<ManChonGheNgoi.SeatSelection> seats = page2.getSelectedSeats();
+        if (seats.isEmpty()) {
+            JOptionPane.showMessageDialog(BanVe.this, "Chưa có ghế nào được chọn.");
+            return;
+        }
+
+        if (currentTrain == null && selectedTrip != null) {
+            DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("HH:mm");
+            currentTrain = new TrainInfo(
+                    selectedTrip.code,
+                    selectedTrip.depart != null ? selectedTrip.depart.format(timeFmt) : "",
+                    selectedTrip.arrive != null ? selectedTrip.arrive.format(timeFmt) : "",
+                    selectedTrip.departStation + " -> " + selectedTrip.arriveStation,
+                    page2.getCarCount()
+            );
+        }
+
+        if (currentTrain == null) {
+            JOptionPane.showMessageDialog(BanVe.this, "Không xác định được thông tin chuyến tàu.");
+            return;
+        }
+
+        selections.clear();
+        for (ManChonGheNgoi.SeatSelection seat : seats) {
+            int seatNumber = seat.getSeatDisplayNumber();
+            selections.add(new TicketSelection(currentTrain, seat.getSoToa(), seatNumber, 0));
+        }
+
+        showStep(3);
+    }
+    
     private class TicketDetailPage extends JPanel {
         private final JPanel list = new JPanel();
         private final JButton btnBack = new JButton("Quay lại");
