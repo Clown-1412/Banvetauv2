@@ -55,6 +55,11 @@ public class ManChonGheNgoi extends JPanel {
     private List<ToaTau> currentCars = Collections.emptyList();
     private JButton btnBack;
     private JButton btnNext;
+    private JTextField commonNameField;
+    private JComboBox<String> commonGenderCombo;
+    private JTextField commonPhoneField;
+    private JTextField commonCccdField;
+    private final List<TicketForm> ticketForms = new ArrayList<>();
     private SeatSelectionListener seatSelectionListener;
     private boolean updatingSelection;
 
@@ -476,6 +481,7 @@ public class ManChonGheNgoi extends JPanel {
         JPanel right = new JPanel(new BorderLayout(8, 8));
         right.setBackground(Color.WHITE);
         right.setPreferredSize(new Dimension(430, 0));
+        right.setPreferredSize(new Dimension(430, 0));
 
         right.add(infoHeader(), BorderLayout.NORTH);
 
@@ -530,38 +536,48 @@ public class ManChonGheNgoi extends JPanel {
                 new EmptyBorder(10,10,10,10)));
         g.setAlignmentX(Component.LEFT_ALIGNMENT);
         g.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        g.setAlignmentX(Component.LEFT_ALIGNMENT);
+        g.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
         GridBagConstraints c = new GridBagConstraints();
         c.insets = new Insets(6,6,6,6);
         c.fill = GridBagConstraints.HORIZONTAL;
         c.anchor = GridBagConstraints.WEST;
 
         // Họ tên
+        if (commonNameField == null) {
+            commonNameField = new JTextField();
+        }
         c.gridx=0; c.gridy=0; c.weightx=0;
         g.add(new JLabel("Họ Tên"), c);
         c.gridx=1; c.weightx=1;
-        g.add(new JTextField(), c);
+        g.add(commonNameField, c);
         
         // Giới tính
+        if (commonGenderCombo == null) {
+            commonGenderCombo = createGenderComboBox();
+        }
         c.gridx=2; c.weightx=0;
         g.add(new JLabel("Giới Tính"), c);
         c.gridx=3; c.weightx=0.6;
-        g.add(createGenderComboBox(), c);
+        g.add(commonGenderCombo, c);
 
         // SĐT
+        if (commonPhoneField == null) {
+            commonPhoneField = new JTextField();
+        }
         c.gridx=0; c.gridy=1; c.weightx=0;
         g.add(new JLabel("Số Điện Thoại"), c);
         c.gridx=1; c.weightx=1;
-        g.add(new JTextField(), c);
+        g.add(commonPhoneField, c);
 
         // CCCD
+        if (commonCccdField == null) {
+            commonCccdField = new JTextField();
+        }
         c.gridx=2; c.gridy=1; c.weightx=0;
         g.add(new JLabel("CCCD"), c);
         c.gridx=3; c.weightx=0.6;
-        g.add(new JTextField(), c);
-
-        // căn cột
-//        c.gridx=2; c.gridy=0; c.weightx=0; g.add(new JLabel(""), c);
-//        c.gridx=3; c.gridy=0; c.weightx=1; g.add(Box.createHorizontalStrut(10), c);
+        g.add(commonCccdField, c);  
 
         return g;
     }
@@ -581,33 +597,50 @@ public class ManChonGheNgoi extends JPanel {
         JLabel title = new JLabel("Chi Tiết Vé:  " + titleText);
         title.setForeground(RED_PRIMARY);
         title.setFont(title.getFont().deriveFont(Font.BOLD, 13.5f));
+        
+        TicketForm form = new TicketForm();
+
 
         JButton quick = solidButton("Điền nhanh", GREEN_SOFT, Color.WHITE);
         quick.setFocusPainted(false);
         quick.setBackground(GREEN_SOFT);
         quick.setForeground(Color.WHITE);
         quick.setBorder(new EmptyBorder(4,10,4,10));
+        quick.addActionListener(e -> fillTicketFormFromCommon(form));
 
         c.gridx=0; c.gridy=0; c.gridwidth=3; c.weightx=1;
         card.add(title, c);
         c.gridx=3; c.gridy=0; c.gridwidth=1; c.weightx=0; c.anchor = GridBagConstraints.EAST;
         card.add(quick, c);
         c.anchor = GridBagConstraints.WEST;
-
+        
+        JTextField nameField = new JTextField(16);
+        form.nameField = nameField;
         c.gridx=0; c.gridy=1; c.weightx=0; card.add(new JLabel("Họ Tên"), c);
-        c.gridx=1; c.weightx=1; card.add(new JTextField(16), c);
-        c.gridx=2; c.weightx=0; card.add(new JLabel("Giới Tính"), c);
-        c.gridx=3; c.weightx=0.6; card.add(createGenderComboBox(), c);
+        c.gridx=1; c.weightx=1; card.add(nameField, c);
 
-        c.gridx=0; c.gridy=2; c.weightx=0; card.add(new JLabel("Năm Sinh"), c);
+        JComboBox<String> genderCombo = createGenderComboBox();
+        form.genderCombo = genderCombo;
+        c.gridx=2; c.weightx=0; card.add(new JLabel("Giới Tính"), c);
+        c.gridx=3; c.weightx=0.6; card.add(genderCombo, c);
+
+        JTextField phoneField = new JTextField(16);
+        form.phoneField = phoneField;
+        c.gridx=0; c.gridy=2; c.weightx=0; card.add(new JLabel("Số Điện Thoại"), c);
+        c.gridx=1; c.weightx=1; card.add(phoneField, c);
+
+        JTextField cccdField = new JTextField(16);
+        form.cccdField = cccdField;
+        c.gridx=2; c.weightx=0; card.add(new JLabel("CCCD"), c);
+        c.gridx=3; c.weightx=0.6; card.add(cccdField, c);
+
+        c.gridx=0; c.gridy=3; c.weightx=0; card.add(new JLabel("Năm Sinh"), c);
         JComboBox<String> year = new JComboBox<>();
         for (int y=1950; y<=2025; y++) year.addItem(String.valueOf(y));
         year.setSelectedItem("1990");
         c.gridx=1; c.weightx=0.6; card.add(year, c);
-        c.gridx=2; c.weightx=0; card.add(new JLabel("CCCD"), c);
-        c.gridx=3; c.weightx=1; card.add(new JTextField(16), c);
-
-        c.gridx=0; c.gridy=3; c.weightx=0; card.add(new JLabel("Loại Vé"), c);
+        c.gridwidth=1;
+        c.gridx=0; c.gridy=4; c.weightx=0; card.add(new JLabel("Loại Vé"), c);
         c.gridx=1; c.gridwidth=3; c.weightx=1;
         JComboBox<String> type = new JComboBox<>(new String[]{
             "Vé dành cho học sinh, sinh viên","Vé người lớn","Vé trẻ em"
@@ -615,7 +648,7 @@ public class ManChonGheNgoi extends JPanel {
         card.add(type, c);
         c.gridwidth=1;
 
-        c.gridx=0; c.gridy=4; c.weightx=0;
+        c.gridx=0; c.gridy=5; c.weightx=0;
         JLabel priceLabel = new JLabel("Tiền Vé");
         priceLabel.setForeground(RED_PRIMARY);
         card.add(priceLabel, c);
@@ -624,14 +657,42 @@ public class ManChonGheNgoi extends JPanel {
         price.setHorizontalAlignment(JTextField.RIGHT);
         card.add(price, c);
         c.gridwidth=1;
-
+        
+        ticketForms.add(form);
         return card;
     }
     
+    private void fillTicketFormFromCommon(TicketForm form) {
+        if (form == null) return;
+
+        if (commonNameField != null) {
+            form.nameField.setText(commonNameField.getText().trim());
+        }
+        if (commonGenderCombo != null) {
+            Object selected = commonGenderCombo.getSelectedItem();
+            if (selected != null) {
+                form.genderCombo.setSelectedItem(selected);
+            }
+        }
+        if (commonPhoneField != null) {
+            form.phoneField.setText(commonPhoneField.getText().trim());
+        }
+        if (commonCccdField != null) {
+            form.cccdField.setText(commonCccdField.getText().trim());
+        }
+    }
+
     private JComboBox<String> createGenderComboBox() {
         JComboBox<String> combo = new JComboBox<>(new String[]{"Nam", "Nữ", "Khác"});
         combo.setFocusable(false);
         return combo;
+    }
+
+    private static class TicketForm {
+        JTextField nameField;
+        JComboBox<String> genderCombo;
+        JTextField phoneField;
+        JTextField cccdField;
     }
 
     private JComponent bottomButtons() {
