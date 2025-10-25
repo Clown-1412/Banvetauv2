@@ -187,6 +187,7 @@ public class BanVe extends JPanel {
         }
 
         selections.clear();
+        
         for (ManChonGheNgoi.SeatSelection seat : seats) {
             int seatNumber = seat.getSeatDisplayNumber();
             selections.add(new TicketSelection(currentTrain, seat.getSoToa(), seatNumber, 0));

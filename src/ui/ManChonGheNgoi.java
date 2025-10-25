@@ -855,17 +855,17 @@ public class ManChonGheNgoi extends JPanel {
             return Objects.hash(ghe.getMaGhe());
         }
     }
-    public static void main(String[] args) {
-        try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception ignore) {}
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Chi tiết vé tàu");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setContentPane(new ManChonGheNgoi());
-            frame.setMinimumSize(new Dimension(1200, 720));
-            frame.setSize(new Dimension(1200, 720));
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
-            frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        });
-    }
+//    public static void main(String[] args) {
+//        try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception ignore) {}
+//        SwingUtilities.invokeLater(() -> {
+//            JFrame frame = new JFrame("Chi tiết vé tàu");
+//            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//            frame.setContentPane(new ManChonGheNgoi());
+//            frame.setMinimumSize(new Dimension(1200, 720));
+//            frame.setSize(new Dimension(1200, 720));
+//            frame.setLocationRelativeTo(null);
+//            frame.setVisible(true);
+//            frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+//        });
+//    }
 }
