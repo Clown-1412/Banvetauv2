@@ -70,7 +70,9 @@ public class ManThanhToan extends JPanel {
         loadPromotions();
         refreshUI();
     }
-
+    
+    
+    
     private JComponent buildHeader() {
         JPanel header = new JPanel(new BorderLayout(0, 8));
         header.setOpaque(false);
@@ -443,7 +445,7 @@ public class ManThanhToan extends JPanel {
 
     private void stylePrimaryButton(JButton button) {
         button.setFocusPainted(false);
-        button.setForeground(Color.WHITE);
+        button.setForeground(Color.BLUE);
         button.setBackground(new Color(0x1E88E5));
         button.setBorder(new EmptyBorder(8, 22, 8, 22));
     }

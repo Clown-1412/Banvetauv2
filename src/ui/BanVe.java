@@ -208,7 +208,7 @@ public class BanVe extends JPanel {
         if (currentTrain == null) {
             JOptionPane.showMessageDialog(BanVe.this, "Không xác định được thông tin chuyến tàu.");
             return false;
-
+        }
         selections.clear();
         
         BigDecimal defaultFare = page2.getFarePerSeat();

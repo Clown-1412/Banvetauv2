@@ -22,7 +22,7 @@ public class ThanhToan_Dao {
                 // 2) Lưu từng vé và chi tiết
                 for (String maGhe : danhSachMaGhe) {
                     // tạo maVe (đơn giản theo time + ghe)
-                    String maVe = "VE" + System.currentTimeMillis() + maGhe.hashCode();
+                    String maVe = "VE" + (System.currentTimeMillis() % 1000000000L);
                     Timestamp now = new Timestamp(System.currentTimeMillis());
                     // mặc định maLoaiVe = LV01 (có thể đổi theo UI)
                     veDao.insertVe(cn, maVe, donGiaMoiVe, "LV01", now, maGhe, maChuyenTau, maHK);
