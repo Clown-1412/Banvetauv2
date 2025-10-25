@@ -1,9 +1,13 @@
 package ui;
 
+import dao.GiaVe_Dao;
+import dao.HanhKhach_Dao;
+import dao.LoaiVe_Dao;
 import dao.SeatMapDao;
 import entity.Ghe;
 import entity.KhoangTau;
 import entity.ToaTau;
+import entity.LoaiVe;
 
 import java.sql.*;
 import javax.swing.*;
@@ -14,14 +18,19 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.Locale;
 
 public class ManChonGheNgoi extends JPanel {
 
@@ -50,21 +59,39 @@ public class ManChonGheNgoi extends JPanel {
     private final JLabel routeLabel = new JLabel();
     private final JPanel carListPanel = new JPanel();
     private final SeatMapDao seatMapDao = new SeatMapDao();
+        private final GiaVe_Dao giaVeDao = new GiaVe_Dao();
+    private final HanhKhach_Dao hanhKhachDao = new HanhKhach_Dao();
+    private final LoaiVe_Dao loaiVeDao = new LoaiVe_Dao();
     private final Map<JToggleButton, SeatSelection> seatBinding = new HashMap<>();
     private final Set<SeatSelection> selectedSeats = new LinkedHashSet<>();
+        private final Map<SeatSelection, TicketForm> ticketForms = new LinkedHashMap<>();
+    private final List<ComboItem> genderOptions = new ArrayList<>();
+    private final List<ComboItem> ticketTypeOptions = new ArrayList<>();
+    private JPanel ticketListPanel;
     private List<ToaTau> currentCars = Collections.emptyList();
     private JButton btnBack;
     private JButton btnNext;
     private JTextField commonNameField;
-    private JComboBox<String> commonGenderCombo;
+    private JComboBox<ComboItem> commonGenderCombo;
     private JTextField commonPhoneField;
     private JTextField commonCccdField;
-    private final List<TicketForm> ticketForms = new ArrayList<>();
+    private String currentMaChuyenTau;
+    private BigDecimal currentFare;
+    private final DecimalFormat currencyFormat;
     private SeatSelectionListener seatSelectionListener;
     private boolean updatingSelection;
 
 
     public ManChonGheNgoi() {
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(new Locale("vi", "VN"));
+        symbols.setGroupingSeparator('.');
+        symbols.setDecimalSeparator(',');
+        currencyFormat = new DecimalFormat("#,##0", symbols);
+        currencyFormat.setMaximumFractionDigits(0);
+        currencyFormat.setMinimumFractionDigits(0);
+
+        loadReferenceData();
+        
         setLayout(new BorderLayout());
         setBackground(Color.WHITE);
 
@@ -216,6 +243,8 @@ public class ManChonGheNgoi extends JPanel {
     private void renderSeatMap(List<ToaTau> cars) {
         seatBinding.clear();
         selectedSeats.clear();
+        ticketForms.clear();
+        refreshTicketCards();
         carListPanel.removeAll();
 
         if (cars == null || cars.isEmpty()) {
@@ -417,14 +446,25 @@ public class ManChonGheNgoi extends JPanel {
             b.addItemListener(e -> {
                 if (updatingSelection) return;
                 if (b.isSelected()) {
+                    if (!canSelectSeat(seat)) {
+                        updatingSelection = true;
+                        b.setSelected(false);
+                        updatingSelection = false;
+                        b.setBackground(SEAT_FREE);
+                        b.setForeground(SEAT_TEXT);
+                        updateNextButtonState();
+                        return;
+                    }
                     b.setBackground(SEAT_SELECTED);
                     b.setForeground(Color.WHITE);
                     selectedSeats.add(seat);
+                    addTicketForm(seat);
                     notifySeatSelected(seat);
                 } else {
                     b.setBackground(SEAT_FREE);
                     b.setForeground(SEAT_TEXT);
                     selectedSeats.remove(seat);
+                    removeTicketForm(seat);
                     notifySeatDeselected(seat);
                 }
                 updateNextButtonState();
@@ -492,9 +532,13 @@ public class ManChonGheNgoi extends JPanel {
 
         body.add(customerFormRow());
         body.add(Box.createVerticalStrut(8));
-        body.add(ticketDetailCard("Toa số: 1, Khoang: 2, Ghế: 9"));
-        body.add(Box.createVerticalStrut(8));
-        body.add(ticketDetailCard("Toa số: 1, Khoang: 2, Ghế: 13"));
+
+        ticketListPanel = new JPanel();
+        ticketListPanel.setLayout(new BoxLayout(ticketListPanel, BoxLayout.Y_AXIS));
+        ticketListPanel.setBackground(Color.WHITE);
+        ticketListPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        body.add(ticketListPanel);
+        
         body.add(Box.createVerticalStrut(8));
         body.add(bottomButtons());
 
@@ -503,6 +547,7 @@ public class ManChonGheNgoi extends JPanel {
         sp.getVerticalScrollBar().setUnitIncrement(18);
 
         right.add(sp, BorderLayout.CENTER);
+        refreshTicketCards();
         return right;
     }
 
@@ -582,24 +627,28 @@ public class ManChonGheNgoi extends JPanel {
         return g;
     }
 
-    private JComponent ticketDetailCard(String titleText) {
+    private TicketForm createTicketForm(SeatSelection seat) {
+        TicketForm form = new TicketForm();
+        form.seat = seat;
+        
         JPanel card = new JPanel(new GridBagLayout());
         card.setBackground(Color.WHITE);
         card.setBorder(new CompoundBorder(new LineBorder(RED_SOFT),
                 new EmptyBorder(8, 10, 10, 10)));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        
         GridBagConstraints c = new GridBagConstraints();
         c.insets = new Insets(6,6,6,6);
         c.fill = GridBagConstraints.HORIZONTAL;
         c.anchor = GridBagConstraints.WEST;
 
-        JLabel title = new JLabel("Chi Tiết Vé:  " + titleText);
+        String tenKhoang = seat.getTenKhoang() != null ? seat.getTenKhoang() : seat.getMaKhoang();
+        String titleText = String.format("Chi Tiết Vé:  Toa số: %d, Khoang: %s, Ghế: %s",
+                seat.getSoToa(), tenKhoang, seat.getGhe().getSoGhe());
+        JLabel title = new JLabel(titleText);
         title.setForeground(RED_PRIMARY);
         title.setFont(title.getFont().deriveFont(Font.BOLD, 13.5f));
-        
-        TicketForm form = new TicketForm();
-
 
         JButton quick = solidButton("Điền nhanh", GREEN_SOFT, Color.WHITE);
         quick.setFocusPainted(false);
@@ -619,7 +668,7 @@ public class ManChonGheNgoi extends JPanel {
         c.gridx=0; c.gridy=1; c.weightx=0; card.add(new JLabel("Họ Tên"), c);
         c.gridx=1; c.weightx=1; card.add(nameField, c);
 
-        JComboBox<String> genderCombo = createGenderComboBox();
+        JComboBox<ComboItem> genderCombo = createGenderComboBox();
         form.genderCombo = genderCombo;
         c.gridx=2; c.weightx=0; card.add(new JLabel("Giới Tính"), c);
         c.gridx=3; c.weightx=0.6; card.add(genderCombo, c);
@@ -635,17 +684,15 @@ public class ManChonGheNgoi extends JPanel {
         c.gridx=3; c.weightx=0.6; card.add(cccdField, c);
 
         c.gridx=0; c.gridy=3; c.weightx=0; card.add(new JLabel("Năm Sinh"), c);
-        JComboBox<String> year = new JComboBox<>();
-        for (int y=1950; y<=2025; y++) year.addItem(String.valueOf(y));
-        year.setSelectedItem("1990");
-        c.gridx=1; c.weightx=0.6; card.add(year, c);
-        c.gridwidth=1;
+        JComboBox<String> yearCombo = createYearComboBox();
+        form.yearCombo = yearCombo;
+        c.gridx=1; c.weightx=0.6; card.add(yearCombo, c);
+        
         c.gridx=0; c.gridy=4; c.weightx=0; card.add(new JLabel("Loại Vé"), c);
         c.gridx=1; c.gridwidth=3; c.weightx=1;
-        JComboBox<String> type = new JComboBox<>(new String[]{
-            "Vé dành cho học sinh, sinh viên","Vé người lớn","Vé trẻ em"
-        });
-        card.add(type, c);
+        JComboBox<ComboItem> ticketTypeCombo = createTicketTypeComboBox();
+        form.ticketTypeCombo = ticketTypeCombo;
+        card.add(ticketTypeCombo, c);
         c.gridwidth=1;
 
         c.gridx=0; c.gridy=5; c.weightx=0;
@@ -653,13 +700,67 @@ public class ManChonGheNgoi extends JPanel {
         priceLabel.setForeground(RED_PRIMARY);
         card.add(priceLabel, c);
         c.gridx=1; c.weightx=1; c.gridwidth=3;
-        JTextField price = new JTextField("81060.0");
-        price.setHorizontalAlignment(JTextField.RIGHT);
-        card.add(price, c);
+        
+        JTextField priceField = new JTextField(formatCurrency(currentFare));
+        priceField.setHorizontalAlignment(JTextField.RIGHT);
+        priceField.setEditable(false);
+        priceField.setFocusable(false);
+        priceField.setBackground(new Color(0xFAFAFA));
+        form.priceField = priceField;
+        card.add(priceField, c);
         c.gridwidth=1;
         
-        ticketForms.add(form);
-        return card;
+        form.container = card;
+        return form;
+    }
+
+    private void addTicketForm(SeatSelection seat) {
+        if (seat == null || ticketForms.containsKey(seat)) {
+            return;
+        }
+        TicketForm form = createTicketForm(seat);
+        ticketForms.put(seat, form);
+        refreshTicketCards();
+        updateTicketPriceFields();
+    }
+
+    private void removeTicketForm(SeatSelection seat) {
+        if (seat == null) {
+            return;
+        }
+        if (ticketForms.remove(seat) != null) {
+            refreshTicketCards();
+        }
+    }
+
+    private void refreshTicketCards() {
+        if (ticketListPanel == null) {
+            return;
+        }
+        ticketListPanel.removeAll();
+        if (ticketForms.isEmpty()) {
+            ticketListPanel.add(emptyMessage("Chưa chọn ghế. Vui lòng chọn ghế để nhập thông tin hành khách."));
+        } else {
+            boolean first = true;
+            for (TicketForm form : ticketForms.values()) {
+                if (!first) {
+                    ticketListPanel.add(Box.createVerticalStrut(8));
+                }
+                ticketListPanel.add(form.container);
+                first = false;
+            }
+        }
+        ticketListPanel.revalidate();
+        ticketListPanel.repaint();
+    }
+
+    private void updateTicketPriceFields() {
+        String priceText = formatCurrency(currentFare);
+        for (TicketForm form : ticketForms.values()) {
+            if (form.priceField != null) {
+                form.priceField.setText(priceText);
+            }
+        }
     }
     
     private void fillTicketFormFromCommon(TicketForm form) {
@@ -668,8 +769,8 @@ public class ManChonGheNgoi extends JPanel {
         if (commonNameField != null) {
             form.nameField.setText(commonNameField.getText().trim());
         }
-        if (commonGenderCombo != null) {
-            Object selected = commonGenderCombo.getSelectedItem();
+        if (commonGenderCombo != null && form.genderCombo != null) {
+            ComboItem selected = (ComboItem) commonGenderCombo.getSelectedItem();
             if (selected != null) {
                 form.genderCombo.setSelectedItem(selected);
             }
@@ -682,17 +783,178 @@ public class ManChonGheNgoi extends JPanel {
         }
     }
 
-    private JComboBox<String> createGenderComboBox() {
-        JComboBox<String> combo = new JComboBox<>(new String[]{"Nam", "Nữ", "Khác"});
+    private JComboBox<ComboItem> createGenderComboBox() {
+        JComboBox<ComboItem> combo = new JComboBox<>();
+        for (ComboItem item : genderOptions) {
+            combo.addItem(item);
+        }
         combo.setFocusable(false);
         return combo;
     }
 
+    private JComboBox<ComboItem> createTicketTypeComboBox() {
+        JComboBox<ComboItem> combo = new JComboBox<>();
+        for (ComboItem item : ticketTypeOptions) {
+            combo.addItem(item);
+        }
+        combo.setFocusable(false);
+        return combo;
+    }
+
+    private JComboBox<String> createYearComboBox() {
+        JComboBox<String> combo = new JComboBox<>();
+        int currentYear = LocalDate.now().getYear();
+        for (int y = currentYear; y >= 1950; y--) {
+            combo.addItem(String.valueOf(y));
+        }
+        if (combo.getItemCount() > 0) {
+            for (int i = 0; i < combo.getItemCount(); i++) {
+                if ("1990".equals(combo.getItemAt(i))) {
+                    combo.setSelectedIndex(i);
+                    break;
+                }
+            }
+        }
+        combo.setFocusable(false);
+        return combo;
+    }
+
+    private static class ComboItem {
+        private final String value;
+        private final String label;
+
+        ComboItem(String value, String label) {
+            this.value = value;
+            this.label = label;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        @Override
+        public String toString() {
+            return label;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof ComboItem)) return false;
+            ComboItem that = (ComboItem) o;
+            return Objects.equals(value, that.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(value);
+        }
+    }
+    
     private static class TicketForm {
+        SeatSelection seat;
+        JPanel container;
         JTextField nameField;
-        JComboBox<String> genderCombo;
+        JComboBox<ComboItem> genderCombo;
         JTextField phoneField;
         JTextField cccdField;
+        JComboBox<String> yearCombo;
+        JComboBox<ComboItem> ticketTypeCombo;
+        JTextField priceField;
+    }
+
+    private String formatCurrency(BigDecimal amount) {
+        if (amount == null) {
+            return "";
+        }
+        synchronized (currencyFormat) {
+            return currencyFormat.format(amount) + " đ";
+        }
+    }
+
+    private void loadReferenceData() {
+        genderOptions.clear();
+        ticketTypeOptions.clear();
+
+        try {
+            Map<String, String> genderMap = hanhKhachDao.findAllGioiTinh();
+            for (Map.Entry<String, String> entry : genderMap.entrySet()) {
+                genderOptions.add(new ComboItem(entry.getKey(), entry.getValue()));
+            }
+        } catch (SQLException ex) {
+            showReferenceDataWarning("Không thể tải danh sách giới tính từ cơ sở dữ liệu. Sẽ sử dụng dữ liệu mặc định.", ex);
+        }
+        if (genderOptions.isEmpty()) {
+            genderOptions.add(new ComboItem("GT-001", "Nam"));
+            genderOptions.add(new ComboItem("GT-002", "Nữ"));
+            genderOptions.add(new ComboItem("GT-003", "Khác"));
+        }
+
+        try {
+            List<LoaiVe> loaiVes = loaiVeDao.findAll();
+            for (LoaiVe loaiVe : loaiVes) {
+                ticketTypeOptions.add(new ComboItem(loaiVe.getMaLoaiVe(), loaiVe.getTenLoaiVe()));
+            }
+        } catch (SQLException ex) {
+            showReferenceDataWarning("Không thể tải danh sách loại vé từ cơ sở dữ liệu. Sẽ sử dụng dữ liệu mặc định.", ex);
+        }
+        if (ticketTypeOptions.isEmpty()) {
+            ticketTypeOptions.add(new ComboItem("LV-001", "Vé Thường"));
+            ticketTypeOptions.add(new ComboItem("LV-002", "Vé học sinh, sinh viên"));
+            ticketTypeOptions.add(new ComboItem("LV-003", "Vé cho người cao tuổi"));
+        }
+    }
+
+    private void showReferenceDataWarning(String message, Exception ex) {
+        System.err.println(message + " Chi tiết: " + ex.getMessage());
+        SwingUtilities.invokeLater(() ->
+                JOptionPane.showMessageDialog(this, message, "Cảnh báo", JOptionPane.WARNING_MESSAGE));
+    }
+
+    private boolean canSelectSeat(SeatSelection seat) {
+        if (selectedSeats.isEmpty()) {
+            return true;
+        }
+        SeatSelection first = selectedSeats.iterator().next();
+        if (Objects.equals(first.getMaKhoang(), seat.getMaKhoang())) {
+            return true;
+        }
+        SwingUtilities.invokeLater(() -> {
+            String khoangDangChon = first.getTenKhoang() != null ? first.getTenKhoang() : first.getMaKhoang();
+            String khoangMoi = seat.getTenKhoang() != null ? seat.getTenKhoang() : seat.getMaKhoang();
+            JOptionPane.showMessageDialog(this,
+                    "Không thể chọn ghế ở khoang " + khoangMoi + " vì bạn đang chọn khoang " + khoangDangChon + ".",
+                    "Thông báo", JOptionPane.WARNING_MESSAGE);
+        });
+        return false;
+    }
+
+    private void loadFareForCurrentTrip() {
+        currentFare = null;
+        if (currentMaChuyenTau == null || currentMaChuyenTau.isBlank()) {
+            updateTicketPriceFields();
+            return;
+        }
+        try {
+            currentFare = giaVeDao.getGiaVeTheoKhoangCach(currentMaChuyenTau);
+            if (currentFare == null) {
+                SwingUtilities.invokeLater(() ->
+                        JOptionPane.showMessageDialog(this,
+                                "Không tìm thấy giá vé cho chuyến tàu đã chọn.",
+                                "Cảnh báo", JOptionPane.WARNING_MESSAGE));
+            }
+        } catch (SQLException ex) {
+            System.err.println("Không thể lấy giá vé: " + ex.getMessage());
+            SwingUtilities.invokeLater(() ->
+                    JOptionPane.showMessageDialog(this,
+                            "Không thể lấy giá vé cho chuyến tàu đã chọn. Vui lòng kiểm tra kết nối cơ sở dữ liệu.",
+                            "Cảnh báo", JOptionPane.WARNING_MESSAGE));
+        }
+        updateTicketPriceFields();
     }
 
     private JComponent bottomButtons() {
@@ -736,13 +998,17 @@ public class ManChonGheNgoi extends JPanel {
     }
 
     public boolean loadSeatMap(String maChuyenTau) {
+        currentMaChuyenTau = maChuyenTau;
         try {
             currentCars = seatMapDao.loadSeatMap(maChuyenTau);
             renderSeatMap(currentCars);
+            loadFareForCurrentTrip();
             return true;
         } catch (SQLException ex) {
             currentCars = Collections.emptyList();
             renderSeatMap(currentCars);
+            currentFare = null;
+            updateTicketPriceFields();
             JOptionPane.showMessageDialog(this,
                     "Không thể tải sơ đồ ghế từ cơ sở dữ liệu. Vui lòng kiểm tra kết nối.",
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -773,7 +1039,10 @@ public class ManChonGheNgoi extends JPanel {
             }
         }
         selectedSeats.clear();
+        ticketForms.clear();
         updatingSelection = false;
+        refreshTicketCards();
+        updateTicketPriceFields();
         updateNextButtonState();
     }
 
