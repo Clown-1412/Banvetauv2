@@ -475,6 +475,7 @@ public class ManChonGheNgoi extends JPanel {
     private JComponent buildRight() {
         JPanel right = new JPanel(new BorderLayout(8, 8));
         right.setBackground(Color.WHITE);
+        right.setPreferredSize(new Dimension(430, 0));
 
         right.add(infoHeader(), BorderLayout.NORTH);
 
@@ -527,15 +528,24 @@ public class ManChonGheNgoi extends JPanel {
         g.setBackground(Color.WHITE);
         g.setBorder(new CompoundBorder(new LineBorder(new Color(235,235,235)),
                 new EmptyBorder(10,10,10,10)));
+        g.setAlignmentX(Component.LEFT_ALIGNMENT);
+        g.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
         GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(4,4,4,4);
+        c.insets = new Insets(6,6,6,6);
         c.fill = GridBagConstraints.HORIZONTAL;
+        c.anchor = GridBagConstraints.WEST;
 
         // Họ tên
         c.gridx=0; c.gridy=0; c.weightx=0;
         g.add(new JLabel("Họ Tên"), c);
         c.gridx=1; c.weightx=1;
         g.add(new JTextField(), c);
+        
+        // Giới tính
+        c.gridx=2; c.weightx=0;
+        g.add(new JLabel("Giới Tính"), c);
+        c.gridx=3; c.weightx=0.6;
+        g.add(createGenderComboBox(), c);
 
         // SĐT
         c.gridx=0; c.gridy=1; c.weightx=0;
@@ -546,12 +556,12 @@ public class ManChonGheNgoi extends JPanel {
         // CCCD
         c.gridx=2; c.gridy=1; c.weightx=0;
         g.add(new JLabel("CCCD"), c);
-        c.gridx=3; c.weightx=1;
+        c.gridx=3; c.weightx=0.6;
         g.add(new JTextField(), c);
 
         // căn cột
-        c.gridx=2; c.gridy=0; c.weightx=0; g.add(new JLabel(""), c);
-        c.gridx=3; c.gridy=0; c.weightx=1; g.add(Box.createHorizontalStrut(10), c);
+//        c.gridx=2; c.gridy=0; c.weightx=0; g.add(new JLabel(""), c);
+//        c.gridx=3; c.gridy=0; c.weightx=1; g.add(Box.createHorizontalStrut(10), c);
 
         return g;
     }
@@ -561,9 +571,12 @@ public class ManChonGheNgoi extends JPanel {
         card.setBackground(Color.WHITE);
         card.setBorder(new CompoundBorder(new LineBorder(RED_SOFT),
                 new EmptyBorder(8, 10, 10, 10)));
+        card.setAlignmentX(Component.LEFT_ALIGNMENT);
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
         GridBagConstraints c = new GridBagConstraints();
         c.insets = new Insets(6,6,6,6);
         c.fill = GridBagConstraints.HORIZONTAL;
+        c.anchor = GridBagConstraints.WEST;
 
         JLabel title = new JLabel("Chi Tiết Vé:  " + titleText);
         title.setForeground(RED_PRIMARY);
@@ -577,42 +590,55 @@ public class ManChonGheNgoi extends JPanel {
 
         c.gridx=0; c.gridy=0; c.gridwidth=3; c.weightx=1;
         card.add(title, c);
-        c.gridx=3; c.gridy=0; c.gridwidth=1; c.weightx=0;
+        c.gridx=3; c.gridy=0; c.gridwidth=1; c.weightx=0; c.anchor = GridBagConstraints.EAST;
         card.add(quick, c);
+        c.anchor = GridBagConstraints.WEST;
 
         c.gridx=0; c.gridy=1; c.weightx=0; card.add(new JLabel("Họ Tên"), c);
         c.gridx=1; c.weightx=1; card.add(new JTextField(16), c);
-        c.gridx=2; c.gridy=1; c.weightx=0; card.add(new JLabel("Năm Sinh"), c);
-        c.gridx=3; c.weightx=0.6;
+        c.gridx=2; c.weightx=0; card.add(new JLabel("Giới Tính"), c);
+        c.gridx=3; c.weightx=0.6; card.add(createGenderComboBox(), c);
+
+        c.gridx=0; c.gridy=2; c.weightx=0; card.add(new JLabel("Năm Sinh"), c);
         JComboBox<String> year = new JComboBox<>();
         for (int y=1950; y<=2025; y++) year.addItem(String.valueOf(y));
         year.setSelectedItem("1990");
-        card.add(year, c);
+        c.gridx=1; c.weightx=0.6; card.add(year, c);
+        c.gridx=2; c.weightx=0; card.add(new JLabel("CCCD"), c);
+        c.gridx=3; c.weightx=1; card.add(new JTextField(16), c);
 
-        c.gridx=0; c.gridy=2; c.weightx=0; card.add(new JLabel("CCCD"), c);
-        c.gridx=1; c.weightx=1; card.add(new JTextField(16), c);
-        c.gridx=2; c.gridy=2; c.weightx=0; card.add(new JLabel("Loại Vé"), c);
-        c.gridx=3; c.weightx=0.6;
+        c.gridx=0; c.gridy=3; c.weightx=0; card.add(new JLabel("Loại Vé"), c);
+        c.gridx=1; c.gridwidth=3; c.weightx=1;
         JComboBox<String> type = new JComboBox<>(new String[]{
             "Vé dành cho học sinh, sinh viên","Vé người lớn","Vé trẻ em"
         });
         card.add(type, c);
+        c.gridwidth=1;
 
-        c.gridx=0; c.gridy=3; c.weightx=0;
+        c.gridx=0; c.gridy=4; c.weightx=0;
         JLabel priceLabel = new JLabel("Tiền Vé");
         priceLabel.setForeground(RED_PRIMARY);
         card.add(priceLabel, c);
-        c.gridx=1; c.weightx=0.6;
+        c.gridx=1; c.weightx=1; c.gridwidth=3;
         JTextField price = new JTextField("81060.0");
         price.setHorizontalAlignment(JTextField.RIGHT);
         card.add(price, c);
+        c.gridwidth=1;
 
         return card;
+    }
+    
+    private JComboBox<String> createGenderComboBox() {
+        JComboBox<String> combo = new JComboBox<>(new String[]{"Nam", "Nữ", "Khác"});
+        combo.setFocusable(false);
+        return combo;
     }
 
     private JComponent bottomButtons() {
         JPanel p = new JPanel(new FlowLayout(FlowLayout.CENTER, 16, 8));
         p.setBackground(Color.WHITE);
+        p.setAlignmentX(Component.LEFT_ALIGNMENT);
+        p.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
         btnBack = solidButton("Quay Lại", new Color(0x64B5F6), Color.WHITE);
         btnBack.setBackground(new Color(0x64B5F6));
