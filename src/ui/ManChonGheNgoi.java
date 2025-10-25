@@ -720,6 +720,7 @@ public class ManChonGheNgoi extends JPanel {
             return;
         }
         TicketForm form = createTicketForm(seat);
+        form.seat = seat;
         ticketForms.put(seat, form);
         refreshTicketCards();
         updateTicketPriceFields();
@@ -762,6 +763,40 @@ public class ManChonGheNgoi extends JPanel {
                 form.priceField.setText(priceText);
             }
         }
+    }
+    
+        public BigDecimal getFarePerSeat() {
+        return currentFare;
+    }
+
+    public List<PassengerInfo> collectPassengerInfos() {
+        List<PassengerInfo> result = new ArrayList<>();
+        for (Map.Entry<SeatSelection, TicketForm> entry : ticketForms.entrySet()) {
+            TicketForm form = entry.getValue();
+            SeatSelection seat = entry.getKey();
+            if (form == null || seat == null) {
+                continue;
+            }
+
+            String hoTen = form.nameField != null ? form.nameField.getText().trim() : "";
+            String soDienThoai = form.phoneField != null ? form.phoneField.getText().trim() : "";
+            String cccd = form.cccdField != null ? form.cccdField.getText().trim() : "";
+            String namSinh = form.yearCombo != null ? (String) form.yearCombo.getSelectedItem() : null;
+
+            ComboItem genderItem = form.genderCombo != null ? (ComboItem) form.genderCombo.getSelectedItem() : null;
+            String maGioiTinh = genderItem != null ? genderItem.getValue() : null;
+            String tenGioiTinh = genderItem != null ? genderItem.getLabel() : null;
+
+            ComboItem ticketTypeItem = form.ticketTypeCombo != null ? (ComboItem) form.ticketTypeCombo.getSelectedItem() : null;
+            String maLoaiVe = ticketTypeItem != null ? ticketTypeItem.getValue() : null;
+            String tenLoaiVe = ticketTypeItem != null ? ticketTypeItem.getLabel() : null;
+
+            BigDecimal giaVe = currentFare != null ? currentFare : BigDecimal.ZERO;
+
+            result.add(new PassengerInfo(seat, hoTen, soDienThoai, cccd, namSinh,
+                    maGioiTinh, tenGioiTinh, maLoaiVe, tenLoaiVe, giaVe));
+        }
+        return result;
     }
     
     private void fillTicketFormFromCommon(TicketForm form) {
@@ -866,6 +901,73 @@ public class ManChonGheNgoi extends JPanel {
         JComboBox<String> yearCombo;
         JComboBox<ComboItem> ticketTypeCombo;
         JTextField priceField;
+    }
+    
+    public static class PassengerInfo {
+        private final SeatSelection seat;
+        private final String hoTen;
+        private final String soDienThoai;
+        private final String cccd;
+        private final String namSinh;
+        private final String maGioiTinh;
+        private final String tenGioiTinh;
+        private final String maLoaiVe;
+        private final String tenLoaiVe;
+        private final BigDecimal giaVe;
+
+        PassengerInfo(SeatSelection seat, String hoTen, String soDienThoai, String cccd, String namSinh,
+                      String maGioiTinh, String tenGioiTinh, String maLoaiVe, String tenLoaiVe, BigDecimal giaVe) {
+            this.seat = seat;
+            this.hoTen = hoTen;
+            this.soDienThoai = soDienThoai;
+            this.cccd = cccd;
+            this.namSinh = namSinh;
+            this.maGioiTinh = maGioiTinh;
+            this.tenGioiTinh = tenGioiTinh;
+            this.maLoaiVe = maLoaiVe;
+            this.tenLoaiVe = tenLoaiVe;
+            this.giaVe = giaVe;
+        }
+
+        public SeatSelection getSeat() {
+            return seat;
+        }
+
+        public String getHoTen() {
+            return hoTen;
+        }
+
+        public String getSoDienThoai() {
+            return soDienThoai;
+        }
+
+        public String getCccd() {
+            return cccd;
+        }
+
+        public String getNamSinh() {
+            return namSinh;
+        }
+
+        public String getMaGioiTinh() {
+            return maGioiTinh;
+        }
+
+        public String getTenGioiTinh() {
+            return tenGioiTinh;
+        }
+
+        public String getMaLoaiVe() {
+            return maLoaiVe;
+        }
+
+        public String getTenLoaiVe() {
+            return tenLoaiVe;
+        }
+
+        public BigDecimal getGiaVe() {
+            return giaVe;
+        }
     }
 
     private String formatCurrency(BigDecimal amount) {
