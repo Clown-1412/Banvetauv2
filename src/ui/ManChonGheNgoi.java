@@ -644,8 +644,9 @@ public class ManChonGheNgoi extends JPanel {
         c.anchor = GridBagConstraints.WEST;
 
         String tenKhoang = seat.getTenKhoang() != null ? seat.getTenKhoang() : seat.getMaKhoang();
+        String seatDisplayLabel = seatLabel(seat);
         String titleText = String.format("Chi Tiết Vé:  Toa số: %d, Khoang: %s, Ghế: %s",
-                seat.getSoToa(), tenKhoang, seat.getGhe().getSoGhe());
+                seat.getSoToa(), tenKhoang, seatDisplayLabel);
         JLabel title = new JLabel(titleText);
         title.setForeground(RED_PRIMARY);
         title.setFont(title.getFont().deriveFont(Font.BOLD, 13.5f));
