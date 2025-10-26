@@ -43,7 +43,13 @@ public class SeatAvailabilityDao {
     public void refreshAll(Connection cn) throws SQLException {
         executeRefresh(cn, null);
     }
-
+    
+    public void refreshForTrip(String maChuyenTau) throws SQLException {
+        try (Connection cn = ConnectDB.getConnection()) {
+            refreshForTrip(cn, maChuyenTau);
+        }
+    }
+    
     public void refreshForTrip(Connection cn, String maChuyenTau) throws SQLException {
         executeRefresh(cn, maChuyenTau);
     }

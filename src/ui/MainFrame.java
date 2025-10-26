@@ -20,6 +20,10 @@ public class MainFrame extends JFrame {
     content.setBorder(new EmptyBorder(0,0,0,0));
     }
     
+    //CAYVL
+    private final BanVe banVePanel = new BanVe();
+    private final ManQuanLiChuyenTau quanLyChuyenTauPanel = new ManQuanLiChuyenTau();
+    
 
     // Current user
     private final TaiKhoan tk;
@@ -57,6 +61,7 @@ public class MainFrame extends JFrame {
         JPanel sidebar = buildSidebar();      // << menu mới nền sáng, không header admin
         JPanel topbar = buildTopbar();
         buildCards();
+        banVePanel.setBookingCompletionListener(() -> quanLyChuyenTauPanel.reloadData());
         
 
         JPanel root = new JPanel(new BorderLayout());
@@ -366,7 +371,8 @@ public class MainFrame extends JFrame {
     private void buildCards() {
         content.add(buildHomePanel(), "home");
 
-        content.add(new BanVe(), "banve");
+        //content.add(new BanVe(), "banve");
+        content.add(banVePanel, "banve");
         content.add(new DoiVe(), "doive");
         content.add(new TraVe(), "trave");
 
@@ -375,7 +381,8 @@ public class MainFrame extends JFrame {
         content.add(new QuanLyTaiKhoanPanel(),     "quanly_taikhoan");
         content.add(new ManQuanLiNhanVien(),            "quanly_nhanvien");
         //content.add(simplePanel("Quản lý chuyến tàu"),     "quanly_chuyentau");
-        content.add(new ManQuanLiChuyenTau(),             "quanly_chuyentau");
+        //content.add(new ManQuanLiChuyenTau(),             "quanly_chuyentau");
+        content.add(quanLyChuyenTauPanel,             "quanly_chuyentau");
 
         content.add(new TimKiemChuyenDiPanel(),           "timkiem_chuyendi");
         content.add(simplePanel("Tìm kiếm khách hàng"),   "timkiem_khachhang");

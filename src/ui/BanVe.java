@@ -16,6 +16,7 @@ import dao.ChuyenDi_Dao;
 import dao.HanhKhach_Dao;
 import dao.NhanVien_Dao;
 import dao.ThanhToan_Dao;
+import dao.SeatAvailabilityDao;
 import entity.ChuyenTau;
 import java.math.BigDecimal;
 
@@ -352,6 +353,7 @@ public class BanVe extends JPanel {
             }
 
             String maHD = service.luuHoaDonVaVe(maNV, maHK, maChuyenTau, maGheList, unit, vat, maKM);
+            new SeatAvailabilityDao().refreshForTrip(maChuyenTau);
 
             JOptionPane.showMessageDialog(this,
                 "Thanh toán thành công!\nMã HĐ: " + maHD + "\nTổng tiền: " + formatVND(tong));
