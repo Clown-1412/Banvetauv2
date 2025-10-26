@@ -2,7 +2,7 @@ package ui;
 
 import dao.KhuyenMai_Dao;
 import entity.KhuyenMai;
-
+import util.AppEventBus;
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
