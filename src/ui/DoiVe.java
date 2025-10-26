@@ -1,4 +1,3 @@
-
 package ui;
 
 import javax.swing.*;
@@ -6,6 +5,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import javax.swing.plaf.basic.BasicButtonUI;
 
 /** Giao diện "Tìm kiếm vé đổi" theo mẫu ảnh (chỉ UI) */
 public class DoiVe extends JPanel {
@@ -20,6 +20,14 @@ public class DoiVe extends JPanel {
     public DoiVe(){
         setLayout(new BorderLayout());
         setBackground(new Color(0xF5F7FB));
+
+        // Loại bỏ painter Nimbus gây “lớp trắng”
+        for (JButton b : new JButton[]{ btnTimVe, btnChonVeMoi }) {
+            b.setUI(new BasicButtonUI());
+            b.setContentAreaFilled(true);
+            b.setOpaque(true);
+            b.setFocusPainted(false);
+        }
 
         add(Ui.banner("TÌM KIẾM VÉ ĐỔI"), BorderLayout.NORTH);
 
@@ -46,9 +54,15 @@ public class DoiVe extends JPanel {
         col.setLayout(new BoxLayout(col, BoxLayout.Y_AXIS));
 
         JPanel rules = Ui.card(Ui.infoBox(
-                "Vé chỉ được Đổi trước thời gian khởi hành tối thiểu 8 giờ.",
-                "Vé đổi phải cùng tuyến tàu và ghế mới phải còn chỗ trống.",
-                "Phí đổi vé: 10% giá vé gốc, cộng trực tiếp vào giá trị vé mới."
+                "Thời điểm yêu cầu đổi: hành khách phải thực hiện đổi trước giờ tàu chạy ghi trên vé ít nhất thời gian tối thiểu quy định.",
+                "Ga đi và ga đến của vé mới phải giống hoặc nằm trong cùng tuyến/điểm xuất phát-đích với vé cũ theo quy định “cùng ga đi – cùng ga đến”.",
+                "Người yêu cầu đổi phải là người mua vé hoặc hành khách trên vé (hoặc được ủy quyền hợp pháp) và thông tin hành khách trên vé phải trùng với giấy tờ tùy thân.",
+                "Thông tin cá nhân hành khách không bị thay đổi khi đổi vé (không đổi tên, số giấy tờ tùy thân, số hành khách…).",
+                "",
+                "📌 Phụ phí khi đổi vé:",
+                "• Đổi ≥ 24 giờ: Phí 10% giá vé cũ.",
+                "• Đổi 4–24 giờ: Phí 20% giá vé cũ.",
+                "• Đổi < 4 giờ: Không được đổi vé."
         ), "QUY ĐỊNH ĐỔI VÉ");
         col.add(rules);
         col.add(Box.createVerticalStrut(16));
@@ -87,9 +101,11 @@ public class DoiVe extends JPanel {
                 "Loại Ghế:","Số Ghế:","Loại Vé:","Tiền Vé:"
         };
         for (String n : names){
-            JTextField f = Ui.field(); f.setEditable(false);
+            JTextField f = Ui.field(); 
+            f.setEditable(false);
             fields.put(n, f);
-            form.add(new JLabel(n)); form.add(f);
+            form.add(new JLabel(n)); 
+            form.add(f);
         }
 
         JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.CENTER));
