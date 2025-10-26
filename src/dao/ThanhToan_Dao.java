@@ -9,6 +9,7 @@ public class ThanhToan_Dao {
     private final HoaDon_Dao hoaDonDao = new HoaDon_Dao();
     private final ChiTietHoaDon_Dao cthdDao = new ChiTietHoaDon_Dao();
     private final Ve_Dao veDao = new Ve_Dao();
+    private final SeatAvailabilityDao seatAvailabilityDao = new SeatAvailabilityDao();
 
     /** Lưu 1 hóa đơn + danh sách vé (mỗi vé 1 chi tiết), thực hiện trong TRANSACTION */
     public String luuHoaDonVaVe(String maNV, String maHK, String maChuyenTau, List<String> danhSachMaGhe, BigDecimal donGiaMoiVe, BigDecimal vat, String maKM) throws SQLException {
@@ -28,7 +29,8 @@ public class ThanhToan_Dao {
                     veDao.insertVe(cn, maVe, donGiaMoiVe, "LV01", now, maGhe, maChuyenTau, maHK);
                     cthdDao.insertCT(cn, maHD, maVe, 1, donGiaMoiVe);
                 }
-
+                seatAvailabilityDao.refreshForTrip(cn, maChuyenTau);
+                
                 cn.commit();
                 return maHD;
             } catch (SQLException ex) {

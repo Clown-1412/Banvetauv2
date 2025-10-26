@@ -119,12 +119,14 @@ public class BanVe extends JPanel {
                     for (ChuyenTau cd : rs) {
                         trips.add(new TripSelectPanel.Trip(
                             cd.getMaChuyenTau(),
+                            cd.getMaTau(),
+                            cd.getTenTau(),
                             cd.getGaDi(),
                             cd.getGaDen(),
                             cd.getThoiGianKhoiHanh(),
                             cd.getThoiGianKetThuc(),
                             cd.getSoGheTrong(),
-                            0.0 // giá vé (chưa có trong DB)
+                            cd.getGiaVe()
                         ));
                     }
                 } catch (Exception ex) {

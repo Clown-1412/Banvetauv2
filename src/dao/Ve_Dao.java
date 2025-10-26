@@ -9,7 +9,7 @@ import java.sql.*;
 public class Ve_Dao {
 
     public boolean isSeatSold(Connection cn, String maChuyenTau, String maGhe) throws SQLException {
-        String sql = "SELECT 1 FROM Ve WHERE maChuyenTau=? AND maGhe=? AND trangThai<>N'Đã hủy'";
+        String sql = "SELECT 1 FROM Ve WHERE maChuyenTau=? AND maGhe=? AND trangThai = N'Đã bán'";
         try (PreparedStatement ps = cn.prepareStatement(sql)) {
             ps.setString(1, maChuyenTau);
             ps.setString(2, maGhe);
