@@ -82,9 +82,9 @@ public class DoiVe extends JPanel {
         JPanel form = new JPanel(new GridLayout(0,2,12,10));
         form.setOpaque(false);
         String[] names = {
-                "Mã Vé","Họ Tên","Năm Sinh","Số CCCD",
-                "Chuyến Đi","Tàu","Toa","Khoang",
-                "Hạng","Ghế","Loại Vé","Tiền Vé"
+                "Mã Vé:","Họ Tên Hành Khách:","Năm Sinh:","Số CCCD:",
+                "Chuyến Tàu:","Tàu Di Chuyển:","Số Toa:","Số Khoang:",
+                "Loại Ghế:","Số Ghế:","Loại Vé:","Tiền Vé:"
         };
         for (String n : names){
             JTextField f = Ui.field(); f.setEditable(false);
@@ -111,15 +111,15 @@ public class DoiVe extends JPanel {
 
     private void fillMockTicket(){
         String[][] demo = {
-                {"Mã Vé","DV012345"},
-                {"Họ Tên","Nguyễn Minh Phúc"},
-                {"Năm Sinh","1999"},
-                {"Số CCCD","010001002345"},
-                {"Chuyến Đi","Sài Gòn → Hà Nội (08/10/2025)"},
-                {"Tàu","SE5"}, {"Toa","02"}, {"Khoang","01"},
-                {"Hạng","Ngồi mềm điều hòa"}, {"Ghế","18"},
-                {"Loại Vé","Vé dành cho học sinh, sinh viên"},
-                {"Tiền Vé","320.000₫"}
+                {"Mã Vé:","DV012345"},
+                {"Họ Tên Hành Khách:","Nguyễn Minh Phúc"},
+                {"Năm Sinh:","1999"},
+                {"Số CCCD:","010001002345"},
+                {"Chuyến Tàu:","Sài Gòn → Hà Nội (08/10/2025)"},
+                {"Tàu Di Chuyển:","SE5"}, {"Số Toa:","02"}, {"Số Khoang:","01"},
+                {"Loại Ghế:","Ngồi mềm điều hòa"}, {"Số Ghế:","18"},
+                {"Loại Vé:","Vé dành cho học sinh, sinh viên"},
+                {"Tiền Vé:","320.000₫"}
         };
         for (String[] kv : demo){
             JTextField f = fields.get(kv[0]);
