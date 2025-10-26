@@ -41,6 +41,7 @@ public class BanVe extends JPanel {
     private TrainInfo currentTrain;
     private final List<TicketSelection> selections = new ArrayList<>();
     private TripSelectPanel.Trip selectedTrip;
+    private Runnable bookingCompletionListener;
 
     public BanVe() {
         setLayout(new BorderLayout());
@@ -66,10 +67,16 @@ public class BanVe extends JPanel {
 
     private void showStep(int step) {
         switch (step) {
-            case 1 -> wizard.show(cards, "p1");
+            case 1 -> {
+                page1.onShow();
+                wizard.show(cards, "p1");
+            }
             case 2 -> wizard.show(cards, "p2");
             case 3 -> goToPaymentStep();
         }
+    }
+    public void setBookingCompletionListener(Runnable listener) {
+        this.bookingCompletionListener = listener;
     }
 
     // ======================= PAGE 1 =======================
@@ -80,6 +87,11 @@ public class BanVe extends JPanel {
 
         private final SearchTripPanel searchPanel = new SearchTripPanel();
         private final TripSelectPanel resultPanel = new TripSelectPanel();
+        
+        private String lastGaDi;
+        private String lastGaDen;
+        private LocalDate lastNgay;
+        private boolean showingResults;
 
         ChooseTripPage() {
             setOpaque(false);
@@ -89,6 +101,9 @@ public class BanVe extends JPanel {
             subPanel.add(searchPanel, "search");
             subPanel.add(resultPanel, "result");
             subCards.show(subPanel, "search");
+            
+            resultPanel.onBack(evt -> showSearchForm());
+            resultPanel.setTripSelectionListener(trip -> handleTripSelection(trip));
 
             // Load ga đi / ga đến từ SQL
             try {
@@ -103,21 +118,40 @@ public class BanVe extends JPanel {
 
             // Sự kiện tìm kiếm
             searchPanel.onSearch(e -> {
-                String gaDi = searchPanel.getGaDi();
-                String gaDen = searchPanel.getGaDen();
-                java.time.LocalDate ngay = searchPanel.getNgayDi();
+                executeSearch(searchPanel.getGaDi(), searchPanel.getGaDen(), searchPanel.getNgayDi());
+            });
+        }
 
-                java.time.LocalDateTime from = ngay.atStartOfDay();
-                java.time.LocalDateTime to = ngay.atTime(23,59,59);
+        private void executeSearch(String gaDi, String gaDen, LocalDate ngay) {
+            if (ngay == null) {
+                ngay = LocalDate.now();
+            }
+            lastGaDi = gaDi;
+            lastGaDen = gaDen;
+            lastNgay = ngay;
 
-                java.util.List<TripSelectPanel.Trip> trips = new java.util.ArrayList<>();
-                try {
-                    dao.ChuyenDi_Dao dao = new dao.ChuyenDi_Dao();
-                    java.util.Date dFrom = java.util.Date.from(from.atZone(java.time.ZoneId.systemDefault()).toInstant());
-                    java.util.Date dTo   = java.util.Date.from(to.atZone(java.time.ZoneId.systemDefault()).toInstant());
-                    List<ChuyenTau> rs = dao.search(null, gaDi, gaDen, dFrom, dTo);
-                    for (ChuyenTau cd : rs) {
-                        trips.add(new TripSelectPanel.Trip(
+            List<TripSelectPanel.Trip> trips = queryTrips(gaDi, gaDen, ngay);
+            resultPanel.setContext(gaDi != null ? gaDi : "", gaDen != null ? gaDen : "", ngay);
+            resultPanel.setTrips(trips);
+            subCards.show(subPanel, "result");
+            showingResults = true;
+        }
+
+        private List<TripSelectPanel.Trip> queryTrips(String gaDi, String gaDen, LocalDate ngay) {
+            if (ngay == null) {
+                return java.util.Collections.emptyList();
+            }
+
+            java.time.LocalDateTime from = ngay.atStartOfDay();
+            java.time.LocalDateTime to = ngay.atTime(23, 59, 59);
+            List<TripSelectPanel.Trip> trips = new ArrayList<>();
+            try {
+                dao.ChuyenDi_Dao dao = new dao.ChuyenDi_Dao();
+                java.util.Date dFrom = java.util.Date.from(from.atZone(java.time.ZoneId.systemDefault()).toInstant());
+                java.util.Date dTo = java.util.Date.from(to.atZone(java.time.ZoneId.systemDefault()).toInstant());
+                List<ChuyenTau> rs = dao.search(null, gaDi, gaDen, dFrom, dTo);
+                for (ChuyenTau cd : rs) {
+                    trips.add(new TripSelectPanel.Trip(
                             cd.getMaChuyenTau(),
                             cd.getMaTau(),
                             cd.getTenTau(),
@@ -127,22 +161,27 @@ public class BanVe extends JPanel {
                             cd.getThoiGianKetThuc(),
                             cd.getSoGheTrong(),
                             cd.getGiaVe()
-                        ));
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+                    ));
                 }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            return trips;
+        }
 
-                resultPanel.setContext(gaDi, gaDen, ngay);
-                resultPanel.setTrips(trips);
-                resultPanel.onBack(evt -> subCards.show(subPanel, "search"));
-                resultPanel.setTripSelectionListener(trip -> {
-                    handleTripSelection(trip);
-                    subCards.show(subPanel, "result");
-                });
+        private void showSearchForm() {
+            subCards.show(subPanel, "search");
+            showingResults = false;
+        }
 
-                subCards.show(subPanel, "result");
-            });
+        void refreshLatestResults() {
+            if (showingResults && lastNgay != null) {
+                executeSearch(lastGaDi, lastGaDen, lastNgay);
+            }
+        }
+
+        void onShow() {
+            refreshLatestResults();
         }
     }
 
@@ -319,6 +358,9 @@ public class BanVe extends JPanel {
             selections.clear();
             page3.setSelections(java.util.Collections.emptyList());
             showStep(1);
+            if (bookingCompletionListener != null) {
+                SwingUtilities.invokeLater(bookingCompletionListener);
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this, "Có lỗi khi lưu dữ liệu: " + ex.getMessage(),
