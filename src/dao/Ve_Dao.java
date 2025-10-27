@@ -7,6 +7,15 @@ import java.math.BigDecimal;
 import java.sql.*;
 
 public class Ve_Dao {
+    
+    public static void refreshExpiredTickets(int graceMinutes) throws SQLException {
+        try (Connection con = ConnectDB.getConnection();
+             CallableStatement cs = con.prepareCall("{ call dbo.MarkTicketsExpired(?) }")
+        ) {
+            cs.setInt(1, graceMinutes);
+            cs.executeUpdate();
+        }
+    }
 
     public boolean isSeatSold(Connection cn, String maChuyenTau, String maGhe) throws SQLException {
         String sql = "SELECT 1 FROM Ve WHERE maChuyenTau=? AND maGhe=? AND trangThai = N'Đã bán'";
