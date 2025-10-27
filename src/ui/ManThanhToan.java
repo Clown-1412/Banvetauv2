@@ -236,6 +236,21 @@ public class ManThanhToan extends JPanel {
     }
 
     private void configureComponents() {
+            promotionCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof KhuyenMai km) {
+                    BigDecimal percent = km.getGiamGia() != null
+                            ? km.getGiamGia().multiply(new BigDecimal(100)).setScale(0, RoundingMode.HALF_UP)
+                            : BigDecimal.ZERO;
+                    setText(km.getTenKhuyenMai() + " (" + percent.intValue() + "%)");
+                } else if (value == null) {
+                    setText("Không áp dụng");
+                }
+                return c;
+            }
+        });
         btnBack.addActionListener(e -> {
             if (backAction != null) {
                 backAction.run();
@@ -257,32 +272,33 @@ public class ManThanhToan extends JPanel {
     }
 
     private void loadPromotions() {
+        String previousSelectionId = selectedPromotionId;
+        KhuyenMai currentSelection = (KhuyenMai) promotionCombo.getSelectedItem();
+        if (currentSelection != null) {
+            previousSelectionId = currentSelection.getMaKhuyenMai();
+        }
         promotionCombo.removeAllItems();
         promotionCombo.addItem(null);
+        
+        KhuyenMai itemToSelect = null;
         try {
             List<KhuyenMai> all = new KhuyenMai_Dao().getAllKhuyenMai();
             for (KhuyenMai km : all) {
                 promotionCombo.addItem(km);
+                if (itemToSelect == null && previousSelectionId != null && previousSelectionId.equals(km.getMaKhuyenMai())) {
+                    itemToSelect = km;
+                }
+                
             }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
 
-        promotionCombo.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (value instanceof KhuyenMai km) {
-                    BigDecimal percent = km.getGiamGia() != null
-                            ? km.getGiamGia().multiply(new BigDecimal(100)).setScale(0, RoundingMode.HALF_UP)
-                            : BigDecimal.ZERO;
-                    setText(km.getTenKhuyenMai() + " (" + percent.intValue() + "%)");
-                } else if (value == null) {
-                    setText("Không áp dụng");
-                }
-                return c;
-            }
-        });
+        if (itemToSelect != null) {
+            promotionCombo.setSelectedItem(itemToSelect);
+        } else {
+            promotionCombo.setSelectedIndex(0);
+        }
     }
 
     private void refreshUI() {
@@ -485,6 +501,7 @@ public class ManThanhToan extends JPanel {
 
     public void setSelections(List<BanVe.TicketSelection> selections) {
         this.selections = selections != null ? new ArrayList<>(selections) : new ArrayList<>();
+        loadPromotions();
         refreshUI();
     }
 
