@@ -20,6 +20,11 @@ import java.util.Locale;
  * Tách riêng khỏi BanVe để dễ bảo trì và tái sử dụng.
  */
 public class ManThanhToan extends JPanel {
+    
+    public enum Mode {
+        BOOKING,
+        EXCHANGE
+    }
 
     private final JLabel routeLabel = new JLabel("-");
     private final JLabel scheduleLabel = new JLabel(" ");
@@ -37,6 +42,19 @@ public class ManThanhToan extends JPanel {
 
     private final JButton btnBack = new JButton("Quay lại");
     private final JButton btnConfirm = new JButton("Xác nhận");
+    
+    private Mode mode = Mode.BOOKING;
+    private ExchangeBreakdown exchangeBreakdown;
+
+    private JLabel promotionLabel;
+    private JLabel vatLabel;
+    private JPanel exchangePanel;
+    private JLabel exchangeOldFareLabel;
+    private JLabel exchangeNewFareLabel;
+    private JLabel exchangeFeeTitleLabel;
+    private JLabel exchangeFeeLabel;
+    private JLabel exchangeDifferenceLabel;
+    private JLabel exchangeNoteLabel;
 
     private Runnable backAction;
     private Runnable editAction;
@@ -69,6 +87,7 @@ public class ManThanhToan extends JPanel {
         configureComponents();
         loadPromotions();
         refreshUI();
+        updateModeUI();
     }
     
     
@@ -198,7 +217,8 @@ public class ManThanhToan extends JPanel {
 
         gc.gridx = 0;
         gc.gridy = 0;
-        box.add(new JLabel("Khuyến mãi"), gc);
+        promotionLabel = new JLabel("Khuyến mãi");
+        box.add(promotionLabel, gc);
         gc.gridx = 1;
         gc.fill = GridBagConstraints.HORIZONTAL;
         promotionCombo.setPreferredSize(new Dimension(220, 32));
@@ -207,13 +227,23 @@ public class ManThanhToan extends JPanel {
         gc.gridx = 0;
         gc.gridy = 1;
         gc.fill = GridBagConstraints.NONE;
-        box.add(new JLabel("VAT (%)"), gc);
+        vatLabel = new JLabel("VAT (%)");
+        box.add(vatLabel, gc);
         gc.gridx = 1;
         vatSpinner.setPreferredSize(new Dimension(80, 32));
         box.add(vatSpinner, gc);
 
         gc.gridx = 0;
         gc.gridy = 2;
+        gc.gridwidth = 2;
+        gc.fill = GridBagConstraints.HORIZONTAL;
+        exchangePanel = buildExchangePanel();
+        box.add(exchangePanel, gc);
+        gc.gridwidth = 1;
+        gc.fill = GridBagConstraints.NONE;
+
+        gc.gridx = 0;
+        gc.gridy = 3;
         box.add(new JLabel("Số tiền cần thanh toán"), gc);
         gc.gridx = 1;
         totalAmountLabel.setFont(totalAmountLabel.getFont().deriveFont(Font.BOLD, 18f));
@@ -221,6 +251,60 @@ public class ManThanhToan extends JPanel {
         box.add(totalAmountLabel, gc);
 
         return box;
+    }
+    
+    private JPanel buildExchangePanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setOpaque(false);
+        GridBagConstraints egc = new GridBagConstraints();
+        egc.insets = new Insets(4, 6, 4, 6);
+        egc.anchor = GridBagConstraints.WEST;
+
+        exchangeOldFareLabel = createValueLabel(new Color(0x102345));
+        exchangeNewFareLabel = createValueLabel(new Color(0x102345));
+        exchangeFeeLabel = createValueLabel(new Color(0xC62828));
+        exchangeDifferenceLabel = createValueLabel(new Color(0xC62828));
+        exchangeNoteLabel = new JLabel(" ");
+        exchangeNoteLabel.setFont(exchangeNoteLabel.getFont().deriveFont(Font.ITALIC, 12f));
+        exchangeNoteLabel.setForeground(new Color(0x6B7A99));
+
+        exchangeFeeTitleLabel = new JLabel("Phụ phí đổi");
+
+        addExchangeRow(panel, egc, 0, new JLabel("Giá vé cũ"), exchangeOldFareLabel);
+        addExchangeRow(panel, egc, 1, new JLabel("Giá vé mới"), exchangeNewFareLabel);
+        addExchangeRow(panel, egc, 2, exchangeFeeTitleLabel, exchangeFeeLabel);
+        addExchangeRow(panel, egc, 3, new JLabel("Chênh lệch phải trả"), exchangeDifferenceLabel);
+
+        egc.gridx = 0;
+        egc.gridy = 4;
+        egc.gridwidth = 2;
+        egc.weightx = 1;
+        panel.add(exchangeNoteLabel, egc);
+
+        panel.setVisible(false);
+        return panel;
+    }
+
+    private void addExchangeRow(JPanel panel, GridBagConstraints gc, int row, JLabel titleLabel, JLabel valueLabel) {
+        gc.gridx = 0;
+        gc.gridy = row;
+        gc.gridwidth = 1;
+        gc.weightx = 0;
+        panel.add(titleLabel, gc);
+
+        gc.gridx = 1;
+        gc.weightx = 1;
+        gc.fill = GridBagConstraints.HORIZONTAL;
+        valueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        panel.add(valueLabel, gc);
+        gc.fill = GridBagConstraints.NONE;
+    }
+
+    private JLabel createValueLabel(Color color) {
+        JLabel label = new JLabel("0 ₫");
+        label.setForeground(color);
+        label.setFont(label.getFont().deriveFont(Font.BOLD));
+        return label;
     }
 
     private JComponent buildFooter() {
@@ -272,6 +356,13 @@ public class ManThanhToan extends JPanel {
     }
 
     private void loadPromotions() {
+        if (mode == Mode.EXCHANGE) {
+            promotionCombo.removeAllItems();
+            promotionCombo.addItem(null);
+            promotionCombo.setSelectedIndex(0);
+            selectedPromotionId = null;
+            return;
+        }
         String previousSelectionId = selectedPromotionId;
         KhuyenMai currentSelection = (KhuyenMai) promotionCombo.getSelectedItem();
         if (currentSelection != null) {
@@ -304,6 +395,7 @@ public class ManThanhToan extends JPanel {
     private void refreshUI() {
         renderTickets();
         updateCustomerInfo();
+        updateExchangePanel();
         recalcTotal();
         updateTrainInfo();
     }
@@ -419,6 +511,21 @@ public class ManThanhToan extends JPanel {
     }
 
     private void recalcTotal() {
+        if (mode == Mode.EXCHANGE) {
+            vatRate = BigDecimal.ZERO;
+            selectedPromotionId = null;
+            if (exchangeBreakdown != null) {
+                BigDecimal rounded = exchangeBreakdown.getTotalPayable().setScale(0, RoundingMode.HALF_UP);
+                totalAmount = rounded.intValue();
+                unitPrice = exchangeBreakdown.getNewFare() != null ? exchangeBreakdown.getNewFare() : BigDecimal.ZERO;
+                totalAmountLabel.setText(formatCurrency(rounded));
+            } else {
+                totalAmount = 0;
+                unitPrice = BigDecimal.ZERO;
+                totalAmountLabel.setText(formatCurrency(BigDecimal.ZERO));
+            }
+            return;
+        }
         BigDecimal subtotal = BigDecimal.ZERO;
         for (BanVe.TicketSelection selection : selections) {
             subtotal = subtotal.add(selection.getBasePrice());
@@ -442,6 +549,37 @@ public class ManThanhToan extends JPanel {
         unitPrice = rounded.divide(new BigDecimal(quantity), 0, RoundingMode.HALF_UP);
 
         totalAmountLabel.setText(formatCurrency(rounded));
+    }
+    
+    private void updateExchangePanel() {
+        boolean isExchange = mode == Mode.EXCHANGE;
+        if (exchangePanel != null) {
+            exchangePanel.setVisible(isExchange);
+        }
+        if (!isExchange) {
+            return;
+        }
+        if (exchangeBreakdown == null) {
+            exchangeOldFareLabel.setText(formatCurrency(BigDecimal.ZERO));
+            exchangeNewFareLabel.setText(formatCurrency(BigDecimal.ZERO));
+            exchangeFeeTitleLabel.setText("Phụ phí đổi");
+            exchangeFeeLabel.setText(formatCurrency(BigDecimal.ZERO));
+            exchangeDifferenceLabel.setText(formatCurrency(BigDecimal.ZERO));
+            exchangeNoteLabel.setText(" ");
+            return;
+        }
+        exchangeOldFareLabel.setText(formatCurrency(exchangeBreakdown.getOldFare()));
+        exchangeNewFareLabel.setText(formatCurrency(exchangeBreakdown.getNewFare()));
+        exchangeFeeTitleLabel.setText("Phụ phí đổi (" + exchangeBreakdown.getFeeRatePercentText() + ")");
+        exchangeFeeLabel.setText(formatCurrency(exchangeBreakdown.getFeeAmount()));
+        exchangeDifferenceLabel.setText(formatCurrency(exchangeBreakdown.getPayableDifference()));
+        if (exchangeBreakdown.getDifference().signum() < 0) {
+            exchangeNoteLabel.setText("Vé mới rẻ hơn " + formatCurrency(exchangeBreakdown.getDifference().abs()) + ". Khoản chênh lệch không hoàn lại.");
+        } else if (exchangeBreakdown.getDifference().signum() > 0) {
+            exchangeNoteLabel.setText("Vé mới cao hơn " + formatCurrency(exchangeBreakdown.getDifference()) + ".");
+        } else {
+            exchangeNoteLabel.setText(" ");
+        }
     }
 
     private void styleLinkButton(JButton button) {
@@ -485,6 +623,21 @@ public class ManThanhToan extends JPanel {
     public void setBackAction(Runnable backAction) {
         this.backAction = backAction;
     }
+    
+    public void setMode(Mode mode) {
+        if (mode == null) {
+            return;
+        }
+        this.mode = mode;
+        if (mode == Mode.EXCHANGE) {
+            promotionCombo.setSelectedItem(null);
+            vatSpinner.setValue(0);
+            selectedPromotionId = null;
+        }
+        updateModeUI();
+        updateExchangePanel();
+        recalcTotal();
+    }
 
     public void setEditTicketsAction(Runnable editAction) {
         this.editAction = editAction;
@@ -492,6 +645,16 @@ public class ManThanhToan extends JPanel {
 
     public void setConfirmAction(Runnable confirmAction) {
         this.confirmAction = confirmAction;
+    }
+    
+    public void setExchangeBreakdown(ExchangeBreakdown breakdown) {
+        this.exchangeBreakdown = breakdown;
+        updateExchangePanel();
+        recalcTotal();
+    }
+
+    public ExchangeBreakdown getExchangeBreakdown() {
+        return exchangeBreakdown;
     }
 
     public void setTrainInfo(BanVe.TrainInfo trainInfo) {
@@ -519,5 +682,77 @@ public class ManThanhToan extends JPanel {
 
     public BigDecimal getUnitPriceAfterAdjustments() {
         return unitPrice;
+    }
+    
+        private void updateModeUI() {
+        boolean isExchange = mode == Mode.EXCHANGE;
+        if (promotionLabel != null) {
+            promotionLabel.setVisible(!isExchange);
+        }
+        promotionCombo.setVisible(!isExchange);
+        promotionCombo.setEnabled(!isExchange);
+        if (vatLabel != null) {
+            vatLabel.setVisible(!isExchange);
+        }
+        vatSpinner.setVisible(!isExchange);
+        vatSpinner.setEnabled(!isExchange);
+        if (exchangePanel != null) {
+            exchangePanel.setVisible(isExchange);
+        }
+    }
+
+    public static class ExchangeBreakdown {
+        private final BigDecimal oldFare;
+        private final BigDecimal newFare;
+        private final BigDecimal feeRate;
+        private final BigDecimal feeAmount;
+        private final BigDecimal difference;
+        private final BigDecimal payableDifference;
+        private final BigDecimal totalPayable;
+
+        public ExchangeBreakdown(BigDecimal oldFare, BigDecimal newFare, BigDecimal feeRate,
+                                  BigDecimal feeAmount, BigDecimal difference,
+                                  BigDecimal payableDifference, BigDecimal totalPayable) {
+            this.oldFare = oldFare != null ? oldFare : BigDecimal.ZERO;
+            this.newFare = newFare != null ? newFare : BigDecimal.ZERO;
+            this.feeRate = feeRate != null ? feeRate : BigDecimal.ZERO;
+            this.feeAmount = feeAmount != null ? feeAmount : BigDecimal.ZERO;
+            this.difference = difference != null ? difference : BigDecimal.ZERO;
+            this.payableDifference = payableDifference != null ? payableDifference : BigDecimal.ZERO;
+            this.totalPayable = totalPayable != null ? totalPayable : BigDecimal.ZERO;
+        }
+
+        public BigDecimal getOldFare() {
+            return oldFare;
+        }
+
+        public BigDecimal getNewFare() {
+            return newFare;
+        }
+
+        public BigDecimal getFeeRate() {
+            return feeRate;
+        }
+
+        public String getFeeRatePercentText() {
+            BigDecimal percent = feeRate.multiply(BigDecimal.valueOf(100));
+            return percent.setScale(0, RoundingMode.HALF_UP).toPlainString() + "%";
+        }
+
+        public BigDecimal getFeeAmount() {
+            return feeAmount;
+        }
+
+        public BigDecimal getDifference() {
+            return difference;
+        }
+
+        public BigDecimal getPayableDifference() {
+            return payableDifference;
+        }
+
+        public BigDecimal getTotalPayable() {
+            return totalPayable;
+        }
     }
 }

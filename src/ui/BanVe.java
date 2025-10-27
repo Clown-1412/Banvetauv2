@@ -56,6 +56,8 @@ public class BanVe extends JPanel {
         cards.add(page3, "p3");
         add(cards, BorderLayout.CENTER);
         
+        page3.setMode(ManThanhToan.Mode.BOOKING);
+        
         page2.addBackActionListener(e -> showStep(1));
         page2.addNextActionListener(e -> handleSeatSelectionNext());
         

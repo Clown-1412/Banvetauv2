@@ -1126,6 +1126,30 @@ public class ManChonGheNgoi extends JPanel {
     public void setSeatSelectionListener(SeatSelectionListener listener) {
         this.seatSelectionListener = listener;
     }
+    
+    public void setCommonPassengerInfo(String hoTen, String soDienThoai, String cccd, String maGioiTinh) {
+        if (commonNameField != null) {
+            commonNameField.setText(hoTen != null ? hoTen : "");
+        }
+        if (commonPhoneField != null) {
+            commonPhoneField.setText(soDienThoai != null ? soDienThoai : "");
+        }
+        if (commonCccdField != null) {
+            commonCccdField.setText(cccd != null ? cccd : "");
+        }
+        if (commonGenderCombo != null && maGioiTinh != null) {
+            for (int i = 0; i < commonGenderCombo.getItemCount(); i++) {
+                ComboItem item = commonGenderCombo.getItemAt(i);
+                if (item != null && maGioiTinh.equalsIgnoreCase(item.getValue())) {
+                    commonGenderCombo.setSelectedIndex(i);
+                    break;
+                }
+            }
+        }
+        for (TicketForm form : ticketForms.values()) {
+            fillTicketFormFromCommon(form);
+        }
+    }
 
     public List<SeatSelection> getSelectedSeats() {
         return new ArrayList<>(selectedSeats);
