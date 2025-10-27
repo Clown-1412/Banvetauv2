@@ -1,10 +1,12 @@
 package ui;
 
+import dao.Ve_Dao;
 import entity.TaiKhoan;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -72,10 +74,23 @@ public class MainFrame extends JFrame {
         setContentPane(root);
 
         cardLayout.show(content, "home");
-
     }
     
-    
+    private void openBanVe() {
+        try {
+            Ve_Dao.refreshExpiredTickets(0);
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Không thể cập nhật trạng thái vé đã hết hạn.\nVui lòng thử lại." +
+                            System.lineSeparator() + ex.getMessage(),
+                    "Lỗi cập nhật vé",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+        cardLayout.show(content, "banve");
+    }
 
     // Build Topbar
     private JPanel buildTopbar() {
@@ -147,7 +162,8 @@ public class MainFrame extends JFrame {
         // --------- Xử lý ----------
         JToggleButton btnXuLy = makeToggle("Xử lý");
         JPanel xlGroup = groupPanel(
-            makeChild("Bán vé",  () -> cardLayout.show(content, "banve")),
+//            makeChild("Bán vé",  () -> cardLayout.show(content, "banve")),
+            makeChild("Bán vé",  this::openBanVe),
             makeChild("Đổi vé",  () -> cardLayout.show(content, "doive")),
             makeChild("Trả vé",  () -> cardLayout.show(content, "trave"))
         );
