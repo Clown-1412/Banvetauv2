@@ -22,7 +22,7 @@ public class SeatAvailabilityDao {
         "), sold AS ( " +
         "    SELECT maChuyenTau, COUNT(*) AS soldCount " +
         "    FROM Ve " +
-        "    WHERE trangThai = N'Đã bán' " +
+        "    WHERE trangThai IN (N'Đã bán', N'Đã đổi') " +
         "    GROUP BY maChuyenTau " +
         ") " +
         "UPDATE ct " +
