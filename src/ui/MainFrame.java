@@ -165,7 +165,8 @@ public class MainFrame extends JFrame {
 //            makeChild("Bán vé",  () -> cardLayout.show(content, "banve")),
             makeChild("Bán vé",  this::openBanVe),
             makeChild("Đổi vé",  () -> cardLayout.show(content, "doive")),
-            makeChild("Trả vé",  () -> cardLayout.show(content, "trave"))
+            makeChild("Trả vé",  () -> cardLayout.show(content, "trave")),
+            makeChild("Xuất hóa đơn",  () -> cardLayout.show(content, "xuathoadon"))
         );
         btnXuLy.addActionListener(e -> { xlGroup.setVisible(btnXuLy.isSelected()); menu.revalidate(); menu.repaint(); });
         menu.add(btnXuLy);
@@ -387,23 +388,24 @@ public class MainFrame extends JFrame {
     private void buildCards() {
         content.add(buildHomePanel(), "home");
 
-        //content.add(new BanVe(), "banve");
+//        content.add(new BanVe(), "banve");
         content.add(banVePanel, "banve");
         content.add(new DoiVe(), "doive");
         content.add(new TraVe(), "trave");
+        content.add(new XuatHoaDonPanel(),      "xuathoadon");
 
         content.add(new KhuyenMaiPanel(),            "khuyenmai");
         content.add(new ManQuanLiHanhKhach(),                 "quanly_hành khách");
         content.add(new QuanLyTaiKhoanPanel(),     "quanly_taikhoan");
         content.add(new ManQuanLiNhanVien(),            "quanly_nhanvien");
-        //content.add(simplePanel("Quản lý chuyến tàu"),     "quanly_chuyentau");
-        //content.add(new ManQuanLiChuyenTau(),             "quanly_chuyentau");
+//        content.add(simplePanel("Quản lý chuyến tàu"),     "quanly_chuyentau");
+//        content.add(new ManQuanLiChuyenTau(),             "quanly_chuyentau");
         content.add(quanLyChuyenTauPanel,             "quanly_chuyentau");
 
         content.add(new TimKiemChuyenDiPanel(),           "timkiem_chuyendi");
         content.add(simplePanel("Tìm kiếm khách hàng"),   "timkiem_khachhang");
         content.add(simplePanel("Tìm kiếm nhân viên"),    "timkiem_nhanvien");
-        content.add(simplePanel("Tìm kiếm hóa đơn"),      "timkiem_hoadon");
+        content.add(new TimKiemHoaDonPanel(),      "timkiem_hoadon");
         content.add(new TimKiemKhuyenMaiPanel(),    "timkiem_khuyenmai");
 
         content.add(simplePanel("Thống kê"),  "thongke_doanhthu");
