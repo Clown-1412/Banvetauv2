@@ -480,7 +480,7 @@ public class ManQuanLiChuyenTau extends JPanel {
         }
     }
 
-    // ===== Primary blue button (luôn xanh cả khi disabled) =====
+    // ===== Primary blue button (luôn xanh) =====
     private static class PrimaryButton extends JButton {
         private final Color base     = new Color(60, 120, 200);
         private final Color hover    = new Color(73, 137, 221);
@@ -523,7 +523,7 @@ public class ManQuanLiChuyenTau extends JPanel {
         }
     }
 
-    // ========= TABLE STYLE (nhái TimKiemChuyenDiPanel) =========
+    // ========= TABLE STYLE =========
     private static class TableStyles {
         static void applyTimKiemStyle(JTable table, JScrollPane scrollPane) {
             table.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);

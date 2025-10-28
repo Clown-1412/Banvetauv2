@@ -376,7 +376,7 @@ public class BanVe extends JPanel {
         }
     }
 
-    // =======================END PAGE 3 =======================
+    // =======================END PAGE =======================
 
     private static String formatVND(int amount) {
         NumberFormat nf = NumberFormat.getInstance(new Locale("vi","VN"));
