@@ -442,7 +442,7 @@ public class BanVe extends JPanel {
                 return;
             }
 
-            Path exportDir = Paths.get("D:/netbean project/BanVeTauv2/HoaDon");
+            Path exportDir = Paths.get("/BanVeTauv2/HoaDon");
             Files.createDirectories(exportDir);
             Path output = exportDir.resolve(maHoaDon + ".pdf");
 
@@ -502,7 +502,7 @@ public class BanVe extends JPanel {
                 return;
             }
 
-            Path exportDir = Paths.get("D:\\netbean project\\BanVeTauv2\\Ve");
+            Path exportDir = Paths.get("/BanVeTauv2/Ve");
             Files.createDirectories(exportDir);
             Path output = exportDir.resolve(selectedTicket + ".pdf");
 

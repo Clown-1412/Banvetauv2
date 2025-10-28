@@ -415,7 +415,7 @@ public class XuatHoaDonPanel extends JPanel {
                 return;
             }
 
-            Path exportDir = Paths.get("D:/netbean project/BanVeTauv2/HoaDon");
+            Path exportDir = Paths.get("/BanVeTauv2/HoaDon");
             Files.createDirectories(exportDir);
             Path output = exportDir.resolve(maHD + ".pdf");
 
