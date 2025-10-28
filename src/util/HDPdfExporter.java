@@ -2,111 +2,50 @@ package util;
 
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.*;
+import entity.InvoicePdfInfo;
+import entity.InvoicePdfItem;
+
+import java.awt.Color;
 import java.io.FileOutputStream;
+import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Locale;
+
 import java.util.List;
-import java.util.ArrayList;
-import java.awt.Color;
+import java.util.Locale;
 
 public class HDPdfExporter {
 
     // A4 dọc và lề thoáng
     private static final Rectangle PAGE_SIZE = PageSize.A4;
-    private static final float MARGIN_L = 36f, MARGIN_R = 36f, MARGIN_T = 36f, MARGIN_B = 48f;
+    private static final float MARGIN_L = 36f;
+    private static final float MARGIN_R = 36f;
+    private static final float MARGIN_T = 36f;
+    private static final float MARGIN_B = 48f;
 
     // Đường dẫn font Unicode
     private static final String FONT_PATH = "C:/Windows/Fonts/times.ttf";
 
     // ====== Model đơn giản ======
-    public static class InvoiceItem {
-        public String maVe;
-        public String tenDichVu;
-        public int soLuong;
-        public long donGia;              // VND
-        public long thanhTienChuaThue;   // = soLuong * donGia (có thể tự truyền)
-        public long thueGTGT;            // VND (ví dụ 10%)
-        public long thanhTienCoThue;     // = chưa thuế + thuế
-    }
+    private static final String COMPANY_NAME = "Công ty CP Vận tải Đường sắt Sài Gòn";
+    private static final String COMPANY_ADDRESS = "01 Nguyễn Thông, P.9, Q.3, TP.HCM";
+    private static final String PAYMENT_METHOD = "Tiền mặt";
+    private static final String TITLE = "HÓA ĐƠN GIÁ TRỊ GIA TĂNG";
 
-    public static class Invoice {
-        // Header
-        public String tieuDe = "HÓA ĐƠN GIÁ TRỊ GIA TĂNG";
-        public LocalDate ngayLap = LocalDate.now();
-
-        // Thông tin bán hàng
-        public String maHoaDon;
-        public String donViBanHang;
-        public String diaChi;
-        public String nhanVienLap;
-        public String dienThoaiNV;
-
-        // Thông tin khách
-        public String tenKhach;
-        public String dienThoaiKhach;
-        public String hinhThucThanhToan;
-
-        // Dòng chi tiết
-        public List<InvoiceItem> items = new ArrayList<>();
-
-        // Ghi chú
-        public String ghiChu = "";
-    }
-
-    // ====== MAIN DEMO ======
-    public static void main(String[] args) {
-        try {
-            Invoice inv = new Invoice();
-            inv.maHoaDon = "HD-2025-0001";
-            inv.donViBanHang = "Công ty CP Vận tải Đường sắt Sài Gòn";
-            inv.diaChi = "01 Nguyễn Thông, P.9, Q.3, TP.HCM";
-            inv.nhanVienLap = "Nguyễn Minh Khoa";
-            inv.dienThoaiNV = "0903 123 456";
-
-            inv.tenKhach = "Trần Thị B";
-            inv.dienThoaiKhach = "0987 654 321";
-            inv.hinhThucThanhToan = "Tiền mặt";
-
-            // 2 dòng mẫu
-            InvoiceItem i1 = new InvoiceItem();
-            i1.maVe = "VLZ8CZK3NS";
-            i1.tenDichVu = "Vé tàu SE001 SG → HN (Toa 03 / Ghế 06B)";
-            i1.soLuong = 1;
-            i1.donGia = 1_250_000;
-            i1.thanhTienChuaThue = i1.soLuong * i1.donGia;
-            i1.thueGTGT = Math.round(i1.thanhTienChuaThue * 0.10);
-            i1.thanhTienCoThue = i1.thanhTienChuaThue + i1.thueGTGT;
-            inv.items.add(i1);
-
-            InvoiceItem i2 = new InvoiceItem();
-            i2.maVe = "ABCD123456";
-            i2.tenDichVu = "Phụ phí đổi vé";
-            i2.soLuong = 1;
-            i2.donGia = 50_000;
-            i2.thanhTienChuaThue = i2.soLuong * i2.donGia;
-            i2.thueGTGT = Math.round(i2.thanhTienChuaThue * 0.10);
-            i2.thanhTienCoThue = i2.thanhTienChuaThue + i2.thueGTGT;
-            inv.items.add(i2);
-
-            export(inv, "invoice.pdf");
-            System.out.println("✅ Đã xuất: " + new java.io.File("invoice.pdf").getAbsolutePath());
-        } catch (Exception e) {
-            e.printStackTrace();
+    public static void export(InvoicePdfInfo invoice, String outPath) throws Exception {
+        if (invoice == null) {
+            throw new IllegalArgumentException("Invoice info must not be null");
         }
-    }
 
-    // ====== Export ======
-    public static void export(Invoice inv, String outPath) throws Exception {
         BaseFont bf = BaseFont.createFont(FONT_PATH, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
 
         Font fTitle = new Font(bf, 16, Font.BOLD);
-        Font fSub   = new Font(bf, 11, Font.NORMAL);
+        Font fSub = new Font(bf, 11, Font.NORMAL);
         Font fLabel = new Font(bf, 11, Font.NORMAL);
-        Font fBold  = new Font(bf, 11, Font.BOLD);
-        Font fCell  = new Font(bf, 10, Font.NORMAL);
+        Font fBold = new Font(bf, 11, Font.BOLD);
+        Font fCell = new Font(bf, 10, Font.NORMAL);
         Font fCellB = new Font(bf, 10, Font.BOLD);
         Font fSmall = new Font(bf, 9, Font.NORMAL);
 
@@ -115,11 +54,13 @@ public class HDPdfExporter {
         doc.open();
 
         // ===== Tiêu đề + ngày =====
-        Paragraph title = new Paragraph(inv.tieuDe, fTitle);
+        LocalDate ngayLap = invoice.getNgayLap() != null ? invoice.getNgayLap() : LocalDate.now();
+
+        Paragraph title = new Paragraph(TITLE, fTitle);
         title.setAlignment(Element.ALIGN_CENTER);
         doc.add(title);
 
-        String ngayText = "Ngày " + inv.ngayLap.getDayOfMonth() + " tháng " + inv.ngayLap.getMonthValue() + " năm " + inv.ngayLap.getYear();
+        String ngayText = "Ngày " + ngayLap.getDayOfMonth() + " tháng " + ngayLap.getMonthValue() + " năm " + ngayLap.getYear();
         Paragraph ngay = new Paragraph(ngayText, fSub);
         ngay.setAlignment(Element.ALIGN_CENTER);
         ngay.setSpacingAfter(10f);
@@ -131,19 +72,19 @@ public class HDPdfExporter {
         seller.setHorizontalAlignment(Element.ALIGN_LEFT);
 
         seller.addCell(labelCell("Mã Hóa Đơn:", fLabel));
-        seller.addCell(fillLineCell(inv.maHoaDon, fLabel));
+        seller.addCell(fillLineCell(nullToEmpty(invoice.getMaHoaDon()), fLabel));
 
         seller.addCell(labelCell("Đơn vị bán hàng:", fLabel));
-        seller.addCell(fillLineCell(inv.donViBanHang, fLabel));
+        seller.addCell(fillLineCell(COMPANY_NAME, fLabel));
 
         seller.addCell(labelCell("Địa chỉ:", fLabel));
-        seller.addCell(fillLineCell(inv.diaChi, fLabel));
+        seller.addCell(fillLineCell(COMPANY_ADDRESS, fLabel));
 
         seller.addCell(labelCell("Nhân viên lập hóa đơn:", fLabel));
-        seller.addCell(fillLineCell(inv.nhanVienLap, fLabel));
+        seller.addCell(fillLineCell(nullToEmpty(invoice.getNhanVienLap()), fLabel));
 
         seller.addCell(labelCell("Điện thoại Nhân viên:", fLabel));
-        seller.addCell(fillLineCell(inv.dienThoaiNV, fLabel));
+        seller.addCell(fillLineCell(nullToEmpty(invoice.getDienThoaiNhanVien()), fLabel));
 
         seller.setSpacingAfter(8f);
         doc.add(seller);
@@ -153,12 +94,12 @@ public class HDPdfExporter {
         buyer.setWidthPercentage(100);
 
         buyer.addCell(labelCell("Họ tên khách hàng:", fLabel));
-        buyer.addCell(fillLineCell(inv.tenKhach, fLabel));
+        buyer.addCell(fillLineCell(nullToEmpty(invoice.getTenKhachHang()), fLabel));
         buyer.addCell(labelCell("Điện thoại Khách hàng:", fLabel));
-        buyer.addCell(fillLineCell(inv.dienThoaiKhach, fLabel));
+        buyer.addCell(fillLineCell(nullToEmpty(invoice.getDienThoaiKhachHang()), fLabel));
 
         buyer.addCell(labelCell("Hình thức thanh toán:", fLabel));
-        PdfPCell pay = fillLineCell(inv.hinhThucThanhToan, fLabel);
+        PdfPCell pay = fillLineCell(PAYMENT_METHOD, fLabel);
         pay.setColspan(3);
         pay.setPaddingLeft(10f);
         buyer.addCell(pay);
@@ -180,24 +121,27 @@ public class HDPdfExporter {
         headerCell(tbl, "Thuế\nGTGT", fCellB);
         headerCell(tbl, "TT có thuế", fCellB);
 
-        NumberFormat vnd = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+        NumberFormat vnd = currencyFormatter();
 
-        long sumChuaThue = 0, sumThue = 0, sumCoThue = 0;
+        BigDecimal sumChuaThue = BigDecimal.ZERO;
+        BigDecimal sumThue = BigDecimal.ZERO;
+        BigDecimal sumCoThue = BigDecimal.ZERO;
 
-        for (int i = 0; i < inv.items.size(); i++) {
-            InvoiceItem it = inv.items.get(i);
-            sumChuaThue += it.thanhTienChuaThue;
-            sumThue     += it.thueGTGT;
-            sumCoThue   += it.thanhTienCoThue;
+        List<InvoicePdfItem> items = invoice.getItems();
+        for (int i = 0; i < items.size(); i++) {
+            InvoicePdfItem it = items.get(i);
+            sumChuaThue = sumChuaThue.add(it.getThanhTienChuaThue());
+            sumThue = sumThue.add(it.getThueGTGT());
+            sumCoThue = sumCoThue.add(it.getThanhTienCoThue());
 
             bodyCell(tbl, String.valueOf(i + 1), fCell, Element.ALIGN_CENTER);
-            bodyCell(tbl, nullToEmpty(it.maVe), fCell, Element.ALIGN_LEFT);
-            bodyCell(tbl, nullToEmpty(it.tenDichVu), fCell, Element.ALIGN_LEFT);
-            bodyCell(tbl, String.valueOf(it.soLuong), fCell, Element.ALIGN_RIGHT);
-            bodyCell(tbl, vnd.format(it.donGia), fCell, Element.ALIGN_RIGHT);
-            bodyCell(tbl, vnd.format(it.thanhTienChuaThue), fCell, Element.ALIGN_RIGHT);
-            bodyCell(tbl, vnd.format(it.thueGTGT), fCell, Element.ALIGN_RIGHT);
-            bodyCell(tbl, vnd.format(it.thanhTienCoThue), fCell, Element.ALIGN_RIGHT);
+            bodyCell(tbl, nullToEmpty(it.getMaVe()), fCell, Element.ALIGN_LEFT);
+            bodyCell(tbl, nullToEmpty(it.getTenDichVu()), fCell, Element.ALIGN_LEFT);
+            bodyCell(tbl, String.valueOf(it.getSoLuong()), fCell, Element.ALIGN_RIGHT);
+            bodyCell(tbl, formatCurrency(it.getDonGiaChuaThue(), vnd), fCell, Element.ALIGN_RIGHT);
+            bodyCell(tbl, formatCurrency(it.getThanhTienChuaThue(), vnd), fCell, Element.ALIGN_RIGHT);
+            bodyCell(tbl, formatCurrency(it.getThueGTGT(), vnd), fCell, Element.ALIGN_RIGHT);
+            bodyCell(tbl, formatCurrency(it.getThanhTienCoThue(), vnd), fCell, Element.ALIGN_RIGHT);
         }
 
         // Dòng tổng cộng (nếu muốn hiển thị)
@@ -207,26 +151,29 @@ public class HDPdfExporter {
         styleBody(totalLab);
         tbl.addCell(totalLab);
 
-        PdfPCell totalChua = new PdfPCell(new Phrase(vnd.format(sumChuaThue), fCellB));
-        totalChua.setHorizontalAlignment(Element.ALIGN_RIGHT); styleBody(totalChua); tbl.addCell(totalChua);
+        PdfPCell totalChua = new PdfPCell(new Phrase(formatCurrency(sumChuaThue, vnd), fCellB));
+        totalChua.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        styleBody(totalChua);
+        tbl.addCell(totalChua);
 
-        PdfPCell totalThue = new PdfPCell(new Phrase(vnd.format(sumThue), fCellB));
-        totalThue.setHorizontalAlignment(Element.ALIGN_RIGHT); styleBody(totalThue); tbl.addCell(totalThue);
+        PdfPCell totalThue = new PdfPCell(new Phrase(formatCurrency(sumThue, vnd), fCellB));
+        totalThue.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        styleBody(totalThue);
+        tbl.addCell(totalThue);
 
-        PdfPCell totalCo = new PdfPCell(new Phrase(vnd.format(sumCoThue), fCellB));
-        totalCo.setHorizontalAlignment(Element.ALIGN_RIGHT); styleBody(totalCo); tbl.addCell(totalCo);
-
+        PdfPCell totalCo = new PdfPCell(new Phrase(formatCurrency(sumCoThue, vnd), fCellB));
+        totalCo.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        styleBody(totalCo);
+        tbl.addCell(totalCo);
+        
         tbl.setSpacingAfter(6f);
         doc.add(tbl);
 
         // ===== Ghi chú =====
         PdfPTable sign = new PdfPTable(new float[]{50, 50});
-
-        // sign.setWidthPercentage(100);
-
-        sign.setWidthPercentage(60);                   // ⬅️ thu còn ~60% chiều ngang trang
-        sign.setHorizontalAlignment(Element.ALIGN_CENTER); // ⬅️ đặt cả bảng ở giữa
-        sign.setSpacingBefore(12f);                    // (tuỳ chọn) tạo khoảng trống phía trên
+        sign.setWidthPercentage(60);
+        sign.setHorizontalAlignment(Element.ALIGN_CENTER);
+        sign.setSpacingBefore(12f);
 
         PdfPCell left = new PdfPCell();
         left.setBorder(Rectangle.NO_BORDER);
@@ -262,13 +209,27 @@ public class HDPdfExporter {
     }
 
     // ===== Helpers =====
-    private static String nullToEmpty(String s) { return s == null ? "" : s; }
+    private static NumberFormat currencyFormatter() {
+        NumberFormat nf = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+        nf.setMaximumFractionDigits(0);
+        nf.setMinimumFractionDigits(0);
+        return nf;
+    }
+
+    private static String formatCurrency(BigDecimal amount, NumberFormat nf) {
+        BigDecimal value = amount != null ? amount : BigDecimal.ZERO;
+        return nf.format(value).replace('₫', 'đ');
+    }
+
+    private static String nullToEmpty(String s) {
+        return s == null ? "" : s;
+    }
 
     private static PdfPCell labelCell(String text, Font f) {
         PdfPCell c = new PdfPCell(new Phrase(text, f));
         c.setBorder(Rectangle.NO_BORDER);
         c.setPadding(3f);
-        c.setNoWrap(true);          // ⬅️
+        c.setNoWrap(true);
         c.setUseAscender(true);
         c.setUseDescender(true);
         return c;

@@ -15,6 +15,7 @@ import java.text.NumberFormat;
 import util.AppSession;
 import dao.ChuyenDi_Dao;
 import dao.HanhKhach_Dao;
+import dao.HoaDonPdfDao;
 import dao.NhanVien_Dao;
 import dao.ThanhToan_Dao;
 import dao.SeatAvailabilityDao;
@@ -24,6 +25,7 @@ import entity.PassengerInfo;
 import entity.SeatSelection;
 import entity.TicketSelection;
 import entity.TrainInfo;
+import entity.InvoicePdfInfo;
 import entity.TicketPdfInfo;
 import java.math.BigDecimal;
 
@@ -37,6 +39,7 @@ import java.util.Date;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import util.TicketPdfExporter;
+import util.HDPdfExporter;
 
 public class BanVe extends JPanel {
 
@@ -81,12 +84,12 @@ public class BanVe extends JPanel {
         
         exportPanel.getBtnInVe().addActionListener(e -> handleExportTicket(exportPanel, pendingTicketIds));
         exportPanel.getBtnInHoaDon().addActionListener(e ->
-                JOptionPane.showMessageDialog(BanVe.this,
-                        "Chức năng đang được phát triển."));
+                handleExportInvoice(exportPanel, pendingInvoiceId));
         exportPanel.getBtnBackHome().addActionListener(e -> {
             showStep(1);
             pendingTicketIds = java.util.Collections.emptyList();
             exportPanel.setInfoMessage(" ");
+            pendingInvoiceId = null;
         });
 
         showStep(1);
@@ -397,8 +400,10 @@ public class BanVe extends JPanel {
     }
     
     private java.util.List<String> pendingTicketIds = java.util.Collections.emptyList();
+    private String pendingInvoiceId;
 
     private void showTicketExportScreen(ThanhToan_Dao.PaymentResult paymentResult, int tongTien) {
+        pendingInvoiceId = paymentResult != null ? paymentResult.getMaHoaDon() : null;
         if (paymentResult == null || paymentResult.getMaVeList().isEmpty()) {
             JOptionPane.showMessageDialog(this,
                     "Thanh toán thành công!\nTổng tiền: " + formatVND(tongTien));
@@ -408,6 +413,7 @@ public class BanVe extends JPanel {
 
         List<String> maVeList = paymentResult.getMaVeList();
         String maHD = paymentResult.getMaHoaDon();
+        pendingInvoiceId = maHD;
         String summary = String.format(
                 "Đã tạo %d vé. Mã HĐ: %s. Tổng tiền: %s",
                 maVeList.size(),
@@ -417,6 +423,51 @@ public class BanVe extends JPanel {
         pendingTicketIds = maVeList;
         exportPanel.setInfoMessage(summary);
         wizard.show(cards, "p4");
+    }
+    
+    private void handleExportInvoice(java.awt.Component parent, String maHoaDon) {
+        if (maHoaDon == null || maHoaDon.isBlank()) {
+            JOptionPane.showMessageDialog(parent, "Không có mã hóa đơn để in.");
+            return;
+        }
+
+        try {
+            HoaDonPdfDao dao = new HoaDonPdfDao();
+            Optional<InvoicePdfInfo> infoOpt = dao.findByMaHoaDon(maHoaDon);
+            if (infoOpt.isEmpty()) {
+                JOptionPane.showMessageDialog(parent,
+                        "Không tìm thấy dữ liệu cho hóa đơn " + maHoaDon,
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            Path exportDir = Paths.get("D:/netbean project/BanVeTauv2/HoaDon");
+            Files.createDirectories(exportDir);
+            Path output = exportDir.resolve(maHoaDon + ".pdf");
+
+            HDPdfExporter.export(infoOpt.get(), output.toString());
+
+            try {
+                if (Desktop.isDesktopSupported()) {
+                    Desktop.getDesktop().open(output.toFile());
+                }
+            } catch (Exception ioe) {
+                JOptionPane.showMessageDialog(parent,
+                        "Không thể mở tệp vừa lưu: " + ioe.getMessage(),
+                        "Cảnh báo",
+                        JOptionPane.WARNING_MESSAGE);
+            }
+
+            JOptionPane.showMessageDialog(parent,
+                    "Đã xuất hóa đơn: " + output.toString());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(parent,
+                    "Có lỗi khi xuất hóa đơn: " + ex.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void handleExportTicket(java.awt.Component parent, List<String> maVeList) {
