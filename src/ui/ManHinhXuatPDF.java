@@ -95,7 +95,8 @@ public class ManHinhXuatPDF extends JPanel {
 
         // ===== Hàng nút =====
         JPanel actions = new JPanel();
-        actions.setOpaque(false);
+        actions.setOpaque(true);
+        actions.setBackground(CARD_BG);
         actions.setBorder(new EmptyBorder(12, 0, 0, 0));
         actions.add(stylePink(btnInVe));
         actions.add(styleBlue(btnInHoaDon));

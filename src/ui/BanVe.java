@@ -27,9 +27,10 @@ import entity.TrainInfo;
 import entity.TicketPdfInfo;
 import java.math.BigDecimal;
 
-import java.awt.Dialog;
-import java.awt.Window;
-import java.io.File;
+import java.awt.Desktop;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -49,6 +50,7 @@ public class BanVe extends JPanel {
     private final ChooseTripPage page1 = new ChooseTripPage();
     private final ManChonGheNgoi page2 = new ManChonGheNgoi();
     private final ManThanhToan page3 = new ManThanhToan();
+    private final ManHinhXuatPDF exportPanel = new ManHinhXuatPDF();
 
     private TrainInfo currentTrain;
     private final List<TicketSelection> selections = new ArrayList<>();
@@ -65,6 +67,7 @@ public class BanVe extends JPanel {
         cards.add(page1, "p1");
         cards.add(page2, "p2");
         cards.add(page3, "p3");
+        cards.add(exportPanel, "p4");
         add(cards, BorderLayout.CENTER);
         
         page3.setMode(ManThanhToan.Mode.BOOKING);
@@ -75,6 +78,16 @@ public class BanVe extends JPanel {
         page3.setBackAction(() -> showStep(2));
         page3.setEditTicketsAction(() -> showStep(2));
         page3.setConfirmAction(this::thucHienThanhToan);
+        
+        exportPanel.getBtnInVe().addActionListener(e -> handleExportTicket(exportPanel, pendingTicketIds));
+        exportPanel.getBtnInHoaDon().addActionListener(e ->
+                JOptionPane.showMessageDialog(BanVe.this,
+                        "Chức năng đang được phát triển."));
+        exportPanel.getBtnBackHome().addActionListener(e -> {
+            showStep(1);
+            pendingTicketIds = java.util.Collections.emptyList();
+            exportPanel.setInfoMessage(" ");
+        });
 
         showStep(1);
     }
@@ -371,12 +384,11 @@ public class BanVe extends JPanel {
 
             selections.clear();
             page3.setSelections(java.util.Collections.emptyList());
-            showStep(1);
             if (bookingCompletionListener != null) {
                 SwingUtilities.invokeLater(bookingCompletionListener);
             }
             
-            SwingUtilities.invokeLater(() -> showTicketExportDialog(paymentResult, tong));
+            SwingUtilities.invokeLater(() -> showTicketExportScreen(paymentResult, tong));
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this, "Có lỗi khi lưu dữ liệu: " + ex.getMessage(),
@@ -384,10 +396,13 @@ public class BanVe extends JPanel {
         }
     }
     
-    private void showTicketExportDialog(ThanhToan_Dao.PaymentResult paymentResult, int tongTien) {
+    private java.util.List<String> pendingTicketIds = java.util.Collections.emptyList();
+
+    private void showTicketExportScreen(ThanhToan_Dao.PaymentResult paymentResult, int tongTien) {
         if (paymentResult == null || paymentResult.getMaVeList().isEmpty()) {
             JOptionPane.showMessageDialog(this,
                     "Thanh toán thành công!\nTổng tiền: " + formatVND(tongTien));
+            showStep(1);
             return;
         }
 
@@ -399,33 +414,20 @@ public class BanVe extends JPanel {
                 maHD != null ? maHD : "-",
                 formatVND(tongTien));
 
-        ManHinhXuatPDF panel = new ManHinhXuatPDF();
-        panel.setInfoMessage(summary);
-
-        Window owner = SwingUtilities.getWindowAncestor(this);
-        JDialog dialog = new JDialog(owner, "Thanh toán thành công", Dialog.ModalityType.APPLICATION_MODAL);
-        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        dialog.setContentPane(panel);
-        dialog.pack();
-        dialog.setLocationRelativeTo(owner);
-
-        panel.getBtnInVe().addActionListener(e -> handleExportTicket(dialog, maVeList));
-        panel.getBtnInHoaDon().addActionListener(e ->
-                JOptionPane.showMessageDialog(dialog, "Chức năng đang được phát triển."));
-        panel.getBtnBackHome().addActionListener(e -> dialog.dispose());
-
-        dialog.setVisible(true);
+        pendingTicketIds = maVeList;
+        exportPanel.setInfoMessage(summary);
+        wizard.show(cards, "p4");
     }
 
-    private void handleExportTicket(JDialog dialog, List<String> maVeList) {
+    private void handleExportTicket(java.awt.Component parent, List<String> maVeList) {
         if (maVeList == null || maVeList.isEmpty()) {
-            JOptionPane.showMessageDialog(dialog, "Không có vé nào để in.");
+            JOptionPane.showMessageDialog(parent, "Không có vé nào để in.");
             return;
         }
 
         String selectedTicket = maVeList.get(0);
         if (maVeList.size() > 1) {
-            Object choice = JOptionPane.showInputDialog(dialog,
+            Object choice = JOptionPane.showInputDialog(parent,
                     "Chọn mã vé cần in",
                     "In vé",
                     JOptionPane.PLAIN_MESSAGE,
@@ -438,43 +440,40 @@ public class BanVe extends JPanel {
             selectedTicket = choice.toString();
         }
 
-        JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Lưu vé PDF");
-        chooser.setSelectedFile(new File(selectedTicket + ".pdf"));
-        int option = chooser.showSaveDialog(dialog);
-        if (option != JFileChooser.APPROVE_OPTION) {
-            return;
-        }
-
-        File file = chooser.getSelectedFile();
-        if (file.exists()) {
-            int confirm = JOptionPane.showConfirmDialog(dialog,
-                    "Tệp đã tồn tại. Bạn có muốn ghi đè?",
-                    "Xác nhận",
-                    JOptionPane.OK_CANCEL_OPTION,
-                    JOptionPane.WARNING_MESSAGE);
-            if (confirm != JOptionPane.OK_OPTION) {
-                return;
-            }
-        }
-
         try {
             TicketPdfDao dao = new TicketPdfDao();
             Optional<TicketPdfInfo> infoOpt = dao.findByMaVe(selectedTicket);
             if (infoOpt.isEmpty()) {
-                JOptionPane.showMessageDialog(dialog,
+                JOptionPane.showMessageDialog(parent,
                         "Không tìm thấy dữ liệu cho mã vé " + selectedTicket,
                         "Lỗi",
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            TicketPdfExporter.export(infoOpt.get(), file.getAbsolutePath());
-            JOptionPane.showMessageDialog(dialog,
-                    "Đã xuất vé: " + file.getAbsolutePath());
+            Path exportDir = Paths.get("D:\\netbean project\\BanVeTauv2\\Ve");
+            Files.createDirectories(exportDir);
+            Path output = exportDir.resolve(selectedTicket + ".pdf");
+
+            TicketPdfExporter.export(infoOpt.get(), output.toString());
+
+            try {
+                if (Desktop.isDesktopSupported()) {
+                    Desktop.getDesktop().open(output.toFile());
+                }
+            } catch (Exception ioe) {
+                // Thông báo nhưng không chặn quy trình lưu
+                JOptionPane.showMessageDialog(parent,
+                        "Không thể mở tệp vừa lưu: " + ioe.getMessage(),
+                        "Cảnh báo",
+                        JOptionPane.WARNING_MESSAGE);
+            }
+
+            JOptionPane.showMessageDialog(parent,
+                    "Đã xuất vé: " + output.toString());
         } catch (Exception ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(dialog,
+            JOptionPane.showMessageDialog(parent,
                     "Có lỗi khi xuất vé: " + ex.getMessage(),
                     "Lỗi",
                     JOptionPane.ERROR_MESSAGE);
