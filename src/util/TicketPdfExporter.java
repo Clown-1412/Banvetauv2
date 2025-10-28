@@ -2,7 +2,9 @@ package util;
 
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.*;
+import entity.TicketPdfInfo;
 import java.io.FileOutputStream;
+import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -14,45 +16,28 @@ public class TicketPdfExporter {
     private static final float MARGIN = 24f;
     private static final String FONT_PATH = "C:/Windows/Fonts/times.ttf"; // hoặc "fonts/NotoSans-Regular.ttf"
 
-    // ====== Model ======
-    public static class Ticket {
-        public String ticketId, gaDi, gaDen, tau, ngayDi, gioDi, toa, cho, loaiCho, loaiVe, hoTen, giayTo;
-        public long giaVND;
-    }
-
-    // ====== Test nhanh (Demo dữ liệu) ======
-    public static void main(String[] args) {
-        try {
-            Ticket t = new Ticket();
-            t.ticketId = "VLZ8CZK3NS";
-            t.gaDi = "SÀI GÒN";
-            t.gaDen = "HÀ NỘI";
-            t.tau = "SE001";
-            t.ngayDi = "01/11/2025";
-            t.gioDi = "19:30";
-            t.toa = "Toa 03";
-            t.cho = "06B";
-            t.loaiCho = "Ghế mềm điều hòa";
-            t.loaiVe = "Người lớn";
-            t.hoTen = "NGUYỄN VĂN A";
-            t.giayTo = "CCCD 0790xxxxxxx";
-            t.giaVND = 1_250_000L;
-
-            String out = "boarding_pass.pdf";
-            export(t, out);
-            System.out.println("Đã xuất: " + new java.io.File(out).getAbsolutePath());
-        } catch (Exception e) {
-            e.printStackTrace();
+    public static void export(TicketPdfInfo info, String outPath) throws Exception {
+        if (info == null) {
+            throw new IllegalArgumentException("Ticket info must not be null");
         }
-    }
+        String ticketId = safe(info.getMaVe());
+        String gaDi = safe(info.getGaDi());
+        String gaDen = safe(info.getGaDen());
+        String tau = safe(info.getTrainDisplay());
+        String ngayDi = safe(info.getNgayDiDisplay());
+        String gioDi = safe(info.getGioDiDisplay());
+        String toa = safe(info.getCoachDisplay());
+        String cho = safe(info.getSeatDisplay());
+        String loaiCho = safe(info.getSeatClassDisplay());
+        String loaiVe = safe(info.getTenLoaiVe());
+        String hoTen = safe(info.getTenHanhKhach());
 
-    // ====== Export ======
-    public static void export(Ticket t, String outPath) throws Exception {
-        // Chuẩn hóa CCCD: chỉ lấy 12 chữ số
-        String cccd = t.giayTo == null ? "" : t.giayTo.replaceAll("\\D", "");
-        if (cccd.length() > 12) cccd = cccd.substring(0, 12);
+        String giayTo = safe(info.getCccd());
+        String cccd = giayTo.replaceAll("\\D", "");
+        if (cccd.length() > 12) {
+            cccd = cccd.substring(0, 12);
+        }
 
-        // Font (tạo 1 lần)
         BaseFont bf = BaseFont.createFont(FONT_PATH, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
         Font fTitleBig = new Font(bf, 12, Font.BOLD);
         Font fTitle    = new Font(bf, 11, Font.BOLD);
@@ -80,14 +65,14 @@ public class TicketPdfExporter {
         // ===== Barcode =====
         PdfContentByte cb = writer.getDirectContent();
         Barcode128 code128 = new Barcode128();
-        code128.setCode(t.ticketId);
+        code128.setCode(ticketId);
         code128.setBarHeight(34f);
         code128.setX(0.8f);
         Image barcode = code128.createImageWithBarcode(cb, null, null);
         barcode.setAlignment(Image.ALIGN_CENTER);
         doc.add(barcode);
 
-        Paragraph pid = new Paragraph("Mã vé/TicketID:  " + t.ticketId, fLabel);
+        Paragraph pid = new Paragraph("Mã vé/TicketID:  " + ticketId, fLabel);
         pid.setAlignment(Element.ALIGN_CENTER);
         pid.setSpacingBefore(2f); pid.setSpacingAfter(6f);
         doc.add(pid);
@@ -111,12 +96,12 @@ public class TicketPdfExporter {
         c.setHorizontalAlignment(Element.ALIGN_CENTER);
         tblGa.addCell(c);
 
-        c = valueCell(t.gaDi, fValueB, true);
+        c = valueCell(gaDi, fValueB, true);
         c.setColspan(2);
         c.setHorizontalAlignment(Element.ALIGN_CENTER);
         tblGa.addCell(c);
 
-        c = valueCell(t.gaDen, fValueB, true);
+        c = valueCell(gaDen, fValueB, true);
         c.setColspan(2);
         c.setHorizontalAlignment(Element.ALIGN_CENTER);
         tblGa.addCell(c);
@@ -130,31 +115,31 @@ public class TicketPdfExporter {
 
         // ===== Tàu/Train =====
         tbl.addCell(labelCell("Tàu/Train:", fLabel));
-        tbl.addCell(valueCell(t.tau, fValue, true));
+        tbl.addCell(valueCell(tau, fValue, true));
         tbl.addCell(emptyCell()); tbl.addCell(emptyCell());
 
         // ===== Ngày đi / Giờ đi =====
         tbl.addCell(labelCell("Ngày đi/Date:", fLabel));
-        tbl.addCell(valueCell(t.ngayDi, fValue, true));
+        tbl.addCell(valueCell(ngayDi, fValue, true));
         tbl.addCell(labelCell("Giờ đi/Time:", fLabel));
-        tbl.addCell(valueCell(t.gioDi, fValue, true));
+        tbl.addCell(valueCell(gioDi, fValue, true));
 
         // ===== Toa / Chỗ =====
         tbl.addCell(labelCell("Toa/Coach:", fLabel));
-        tbl.addCell(valueCell(t.toa, fValue, true));
+        tbl.addCell(valueCell(toa, fValue, true));
         tbl.addCell(labelCell("Chỗ/Seat:", fLabel));
-        tbl.addCell(valueCell(t.cho, fValue, true));
+        tbl.addCell(valueCell(cho, fValue, true));
 
         // ===== Loại chỗ =====
-        tbl.addCell(pairCell("Loại chỗ/Class:", t.loaiCho, fLabel, fValue, 2));
+        tbl.addCell(pairCell("Loại chỗ/Class:", loaiCho, fLabel, fValue, 2));
         tbl.addCell(emptyCell()); tbl.addCell(emptyCell());
 
         // ===== Loại vé =====
-        tbl.addCell(pairCell("Loại vé/Ticket:", t.loaiVe, fLabel, fValue, 2));
+        tbl.addCell(pairCell("Loại vé/Ticket:", loaiVe, fLabel, fValue, 2));
         tbl.addCell(emptyCell()); tbl.addCell(emptyCell());
 
         // ===== Họ tên =====
-        tbl.addCell(pairCell("Họ tên/Name:", t.hoTen, fLabel, fValueB, 2));
+        tbl.addCell(pairCell("Họ tên/Name:", hoTen, fLabel, fValueB, 2));
         tbl.addCell(emptyCell()); tbl.addCell(emptyCell());
 
         // ===== Giấy tờ =====
@@ -162,8 +147,7 @@ public class TicketPdfExporter {
         tbl.addCell(emptyCell()); tbl.addCell(emptyCell());
 
         // ===== Giá =====
-        String giaStr = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"))
-                .format(t.giaVND).replace('₫', 'đ');
+        String giaStr = formatCurrency(info.getGiaVe());
         tbl.addCell(labelCell("Giá/Price:", fLabelB));
         tbl.addCell(valueCell(giaStr, fValueB, true));
         tbl.addCell(emptyCell()); tbl.addCell(emptyCell());
@@ -188,6 +172,20 @@ public class TicketPdfExporter {
     }
 
     // ===== Helpers =====
+    private static String safe(String value) {
+        return value != null ? value.trim() : "";
+    }
+
+    private static String formatCurrency(BigDecimal amount) {
+        if (amount == null) {
+            return "";
+        }
+        NumberFormat nf = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+        nf.setMaximumFractionDigits(0);
+        nf.setMinimumFractionDigits(0);
+        return nf.format(amount).replace('₫', 'đ');
+    }
+    
     private static PdfPCell labelCell(String txt, Font f) {
         PdfPCell c = new PdfPCell(new Phrase(txt, f));
         c.setPadding(4.5f);
@@ -212,7 +210,7 @@ public class TicketPdfExporter {
     private static PdfPCell pairCell(String label, String value, Font fLabel, Font fValue, int colspan) {
         Phrase ph = new Phrase();
         ph.add(new Chunk(label, fLabel));
-        ph.add(new Chunk("  ", fLabel)); // 2 space
+        ph.add(new Chunk("  ", fLabel));
         ph.add(new Chunk(value, fValue));
         PdfPCell c = new PdfPCell(ph);
         c.setPadding(4.5f);

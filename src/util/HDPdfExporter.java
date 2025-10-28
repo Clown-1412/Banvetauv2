@@ -222,7 +222,6 @@ public class HDPdfExporter {
         // ===== Ghi chú =====
         PdfPTable sign = new PdfPTable(new float[]{50, 50});
 
-        // trước đây: full width nên trông dạt về 2 bên
         // sign.setWidthPercentage(100);
 
         sign.setWidthPercentage(60);                   // ⬅️ thu còn ~60% chiều ngang trang
@@ -275,13 +274,12 @@ public class HDPdfExporter {
         return c;
     }
 
-    // Ô có gạch chân bên dưới để điền (giống “dòng kẻ”)
     private static PdfPCell fillLineCell(String content, Font f) {
         PdfPCell c = new PdfPCell(new Phrase(content == null ? "" : content, f));
         c.setBorder(Rectangle.BOTTOM);
         c.setPadding(3f);
         c.setBorderWidthBottom(0.8f);
-        c.setNoWrap(true);          // ⬅️ chống xuống dòng
+        c.setNoWrap(true);          //chống xuống dòng
         c.setUseAscender(true);
         c.setUseDescender(true);
         c.setMinimumHeight(16f);    // cao dòng ổn định
@@ -312,7 +310,5 @@ public class HDPdfExporter {
         c.setBorderWidthRight(1f);
         c.setBorderWidthTop(0.7f);
         c.setBorderWidthBottom(0.7f);
-        // kẻ chấm nhẹ trong ô (như mẫu) → dùng line thấp
-        // Nếu muốn "dotted", bạn có thể custom draw, ở đây dùng border mảnh là đủ.
     }
 }

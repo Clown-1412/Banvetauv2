@@ -25,10 +25,11 @@ public class ManHinhXuatPDF extends JPanel {
     // Đường dẫn ảnh trong classpath (đặt file tại: /img/image_payment.png)
     private static final String PAYMENT_IMG = "/img/image_payment.png";
 
-    // ==== Nút ====
+    // ==== Nút & thông tin ====
     private final JButton btnInVe       = new JButton("In Vé");
     private final JButton btnInHoaDon   = new JButton("In Hóa Đơn");
     private final JButton btnBackHome   = new JButton("Trở Về Trang Chủ");
+    private final JLabel infoLabel      = new JLabel(" ", SwingConstants.CENTER);
 
     public ManHinhXuatPDF() {
         setLayout(new GridBagLayout()); // để panel trung tâm nằm giữa
@@ -56,39 +57,41 @@ public class ManHinhXuatPDF extends JPanel {
         lbHeader.setBorder(new EmptyBorder(8, 12, 8, 12));
         card.add(lbHeader, BorderLayout.NORTH);
 
-        // ===== Nội dung ảnh =====
-        JPanel content = new JPanel(new BorderLayout()) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                ImageIcon icon = loadScaledIcon(PAYMENT_IMG, getWidth(), getHeight());
-                if (icon != null) {
-                    g.drawImage(icon.getImage(), 0, 0, getWidth(), getHeight(), this);
-                }
-            }
-        };
+        // ===== Nội dung trung tâm =====
+        JPanel centerWrapper = new JPanel(new BorderLayout());
+        centerWrapper.setOpaque(false);
+
+        infoLabel.setOpaque(false);
+        infoLabel.setFont(infoLabel.getFont().deriveFont(Font.PLAIN, 14f));
+        infoLabel.setForeground(new Color(0x2F3A5A));
+        infoLabel.setBorder(new EmptyBorder(16, 12, 16, 12));
+        centerWrapper.add(infoLabel, BorderLayout.NORTH);
+
+        JPanel content = new JPanel(new GridBagLayout());
         content.setBackground(CONTENT_BG);
         content.setBorder(new CompoundBorder(
                 new LineBorder(BORDER_COLOR, 1, true),
-                new EmptyBorder(0, 0, 0, 0)
+                new EmptyBorder(12, 12, 12, 12)
         ));
-        card.add(content, BorderLayout.CENTER);   // ✅ Không add gì khác vào content
 
-        // Ảnh: cố gắng load từ classpath, nếu không có thì dùng icon mặc định
+
         JLabel imgLabel = new JLabel();
         imgLabel.setHorizontalAlignment(SwingConstants.CENTER);
         imgLabel.setVerticalAlignment(SwingConstants.CENTER);
-        imgLabel.setPreferredSize(new Dimension(240, 240)); // khung ảnh lớn hơn
+        imgLabel.setPreferredSize(new Dimension(240, 240));
 
-        ImageIcon icon = loadScaledIcon(PAYMENT_IMG, 220, 220);
+        ImageIcon icon = loadScaledIcon(PAYMENT_IMG, 240, 240);
         if (icon != null) {
             imgLabel.setIcon(icon);
         } else {
-            // fallback
+
             imgLabel.setIcon(UIManager.getIcon("OptionPane.informationIcon"));
         }
 
-        card.add(content, BorderLayout.CENTER);
+        content.add(imgLabel, new GridBagConstraints());
+        centerWrapper.add(content, BorderLayout.CENTER);
+
+        card.add(centerWrapper, BorderLayout.CENTER);
 
         // ===== Hàng nút =====
         JPanel actions = new JPanel();
@@ -141,6 +144,11 @@ public class ManHinhXuatPDF extends JPanel {
     public JButton getBtnInVe() { return btnInVe; }
     public JButton getBtnInHoaDon() { return btnInHoaDon; }
     public JButton getBtnBackHome() { return btnBackHome; }
+    
+    public void setInfoMessage(String message) {
+        String text = (message != null && !message.isBlank()) ? message : " ";
+        infoLabel.setText(text);
+    }
 
     // ==== Demo chạy độc lập ====
     public static void main(String[] args) {

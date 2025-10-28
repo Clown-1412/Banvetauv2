@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.text.NumberFormat;
 import util.AppSession;
 import dao.ChuyenDi_Dao;
@@ -17,18 +18,24 @@ import dao.HanhKhach_Dao;
 import dao.NhanVien_Dao;
 import dao.ThanhToan_Dao;
 import dao.SeatAvailabilityDao;
+import dao.TicketPdfDao;
 import entity.ChuyenTau;
 import entity.PassengerInfo;
 import entity.SeatSelection;
 import entity.TicketSelection;
 import entity.TrainInfo;
+import entity.TicketPdfInfo;
 import java.math.BigDecimal;
 
+import java.awt.Dialog;
+import java.awt.Window;
+import java.io.File;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import util.TicketPdfExporter;
 
 public class BanVe extends JPanel {
 
@@ -358,21 +365,119 @@ public class BanVe extends JPanel {
                 unit = BigDecimal.ZERO;
             }
 
-            String maHD = service.luuHoaDonVaVe(maNV, maHK, maChuyenTau, maGheList, unit, vat, maKM);
+            ThanhToan_Dao.PaymentResult paymentResult = service.luuHoaDonVaVe(
+                    maNV, maHK, maChuyenTau, maGheList, unit, vat, maKM);
             new SeatAvailabilityDao().refreshForTrip(maChuyenTau);
 
-            JOptionPane.showMessageDialog(this,
-                "Thanh toán thành công!\nMã HĐ: " + maHD + "\nTổng tiền: " + formatVND(tong));
             selections.clear();
             page3.setSelections(java.util.Collections.emptyList());
             showStep(1);
             if (bookingCompletionListener != null) {
                 SwingUtilities.invokeLater(bookingCompletionListener);
             }
+            
+            SwingUtilities.invokeLater(() -> showTicketExportDialog(paymentResult, tong));
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this, "Có lỗi khi lưu dữ liệu: " + ex.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private void showTicketExportDialog(ThanhToan_Dao.PaymentResult paymentResult, int tongTien) {
+        if (paymentResult == null || paymentResult.getMaVeList().isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Thanh toán thành công!\nTổng tiền: " + formatVND(tongTien));
+            return;
+        }
+
+        List<String> maVeList = paymentResult.getMaVeList();
+        String maHD = paymentResult.getMaHoaDon();
+        String summary = String.format(
+                "Đã tạo %d vé. Mã HĐ: %s. Tổng tiền: %s",
+                maVeList.size(),
+                maHD != null ? maHD : "-",
+                formatVND(tongTien));
+
+        ManHinhXuatPDF panel = new ManHinhXuatPDF();
+        panel.setInfoMessage(summary);
+
+        Window owner = SwingUtilities.getWindowAncestor(this);
+        JDialog dialog = new JDialog(owner, "Thanh toán thành công", Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setContentPane(panel);
+        dialog.pack();
+        dialog.setLocationRelativeTo(owner);
+
+        panel.getBtnInVe().addActionListener(e -> handleExportTicket(dialog, maVeList));
+        panel.getBtnInHoaDon().addActionListener(e ->
+                JOptionPane.showMessageDialog(dialog, "Chức năng đang được phát triển."));
+        panel.getBtnBackHome().addActionListener(e -> dialog.dispose());
+
+        dialog.setVisible(true);
+    }
+
+    private void handleExportTicket(JDialog dialog, List<String> maVeList) {
+        if (maVeList == null || maVeList.isEmpty()) {
+            JOptionPane.showMessageDialog(dialog, "Không có vé nào để in.");
+            return;
+        }
+
+        String selectedTicket = maVeList.get(0);
+        if (maVeList.size() > 1) {
+            Object choice = JOptionPane.showInputDialog(dialog,
+                    "Chọn mã vé cần in",
+                    "In vé",
+                    JOptionPane.PLAIN_MESSAGE,
+                    null,
+                    maVeList.toArray(),
+                    selectedTicket);
+            if (choice == null) {
+                return;
+            }
+            selectedTicket = choice.toString();
+        }
+
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Lưu vé PDF");
+        chooser.setSelectedFile(new File(selectedTicket + ".pdf"));
+        int option = chooser.showSaveDialog(dialog);
+        if (option != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        File file = chooser.getSelectedFile();
+        if (file.exists()) {
+            int confirm = JOptionPane.showConfirmDialog(dialog,
+                    "Tệp đã tồn tại. Bạn có muốn ghi đè?",
+                    "Xác nhận",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+            if (confirm != JOptionPane.OK_OPTION) {
+                return;
+            }
+        }
+
+        try {
+            TicketPdfDao dao = new TicketPdfDao();
+            Optional<TicketPdfInfo> infoOpt = dao.findByMaVe(selectedTicket);
+            if (infoOpt.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog,
+                        "Không tìm thấy dữ liệu cho mã vé " + selectedTicket,
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            TicketPdfExporter.export(infoOpt.get(), file.getAbsolutePath());
+            JOptionPane.showMessageDialog(dialog,
+                    "Đã xuất vé: " + file.getAbsolutePath());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(dialog,
+                    "Có lỗi khi xuất vé: " + ex.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
