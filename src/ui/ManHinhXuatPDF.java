@@ -24,6 +24,8 @@ public class ManHinhXuatPDF extends JPanel {
     
     // Đường dẫn ảnh trong classpath (đặt file tại: /img/image_payment.png)
     private static final String PAYMENT_IMG = "/img/image_payment.png";
+    
+
 
     // ==== Nút & thông tin ====
     private final JButton btnInVe       = new JButton("In Vé");
@@ -67,31 +69,21 @@ public class ManHinhXuatPDF extends JPanel {
         infoLabel.setBorder(new EmptyBorder(16, 12, 16, 12));
         centerWrapper.add(infoLabel, BorderLayout.NORTH);
 
-        JPanel content = new JPanel(new GridBagLayout());
+        // Panel phần xanh dùng BorderLayout
+        JPanel content = new JPanel(new BorderLayout());
         content.setBackground(CONTENT_BG);
         content.setBorder(new CompoundBorder(
                 new LineBorder(BORDER_COLOR, 1, true),
-                new EmptyBorder(12, 12, 12, 12)
+                new EmptyBorder(0, 0, 0, 0)
         ));
 
+        // Panel vẽ ảnh “phủ kín” phần xanh
+        ScaledImagePanel imgPanel = new ScaledImagePanel(PAYMENT_IMG, true); // true = COVER
+        content.add(imgPanel, BorderLayout.CENTER); // <-- dùng String, KHÔNG dùng GridBagConstraints
 
-        JLabel imgLabel = new JLabel();
-        imgLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        imgLabel.setVerticalAlignment(SwingConstants.CENTER);
-        imgLabel.setPreferredSize(new Dimension(240, 240));
-
-        ImageIcon icon = loadScaledIcon(PAYMENT_IMG, 240, 240);
-        if (icon != null) {
-            imgLabel.setIcon(icon);
-        } else {
-
-            imgLabel.setIcon(UIManager.getIcon("OptionPane.informationIcon"));
-        }
-
-        content.add(imgLabel, new GridBagConstraints());
         centerWrapper.add(content, BorderLayout.CENTER);
-
         card.add(centerWrapper, BorderLayout.CENTER);
+
 
         // ===== Hàng nút =====
         JPanel actions = new JPanel();
@@ -108,16 +100,47 @@ public class ManHinhXuatPDF extends JPanel {
 
     // ===== Helpers =====
     private JButton styleBase(JButton b, Color bg) {
+        b.setUI(new javax.swing.plaf.basic.BasicButtonUI());
         b.setFocusPainted(false);
         b.setBackground(bg);
         b.setForeground(Color.WHITE);
+        b.setOpaque(true);
+        b.setContentAreaFilled(true);
         b.setFont(b.getFont().deriveFont(Font.BOLD, 14f));
         b.setBorder(new CompoundBorder(
                 new LineBorder(bg.darker(), 1, true),
                 new EmptyBorder(10, 18, 10, 18)
         ));
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                final Color base = bg;
+        final Color hover = mixColor(base, 0.15f);
+        final Color pressed = mixColor(base, -0.1f);
+        final Color disabledBg = new Color(0xB0BEC5);
+        final Color disabledFg = new Color(0xECEFF1);
+
+        b.getModel().addChangeListener(e -> {
+            ButtonModel m = b.getModel();
+            if (!b.isEnabled()) {
+                b.setBackground(disabledBg);
+                b.setForeground(disabledFg);
+            } else if (m.isPressed()) {
+                b.setBackground(pressed);
+                b.setForeground(Color.WHITE);
+            } else if (m.isRollover()) {
+                b.setBackground(hover);
+                b.setForeground(Color.WHITE);
+            } else {
+                b.setBackground(base);
+                b.setForeground(Color.WHITE);
+            }
+        });
+        
         return b;
+    }
+    private Color mixColor(Color base, float delta) {
+        float[] hsb = Color.RGBtoHSB(base.getRed(), base.getGreen(), base.getBlue(), null);
+        hsb[2] = Math.max(0f, Math.min(1f, hsb[2] + delta));
+        return Color.getHSBColor(hsb[0], hsb[1], hsb[2]);
     }
     private JButton styleGreen(JButton b) { return styleBase(b, GREEN_BUTTON); }
     private JButton styleBlue(JButton b)  { return styleBase(b, BLUE_BUTTON); }
@@ -171,4 +194,43 @@ public class ManHinhXuatPDF extends JPanel {
             f.setVisible(true);
         });
     }
+    
+    // Panel vẽ ảnh scale theo kích thước panel
+    private static class ScaledImagePanel extends JPanel {
+        private final Image img;
+        private final boolean cover; // true: phủ kín (có thể crop). false: vừa khít (có viền trống)
+
+        ScaledImagePanel(String resourcePath, boolean cover) {
+            this.cover = cover;
+            java.net.URL url = ManHinhXuatPDF.class.getResource(resourcePath);
+            if (url != null) {
+                img = new ImageIcon(url).getImage();
+            } else {
+                img = Toolkit.getDefaultToolkit().getImage(resourcePath); // fallback đường dẫn file
+            }
+            setOpaque(true);
+            setBackground(new Color(0xE3F2FD));
+        }
+
+        @Override protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (img == null) return;
+
+            int pw = getWidth(), ph = getHeight();
+            int iw = img.getWidth(this), ih = img.getHeight(this);
+            if (iw <= 0 || ih <= 0) return;
+
+            double sx = pw / (double) iw;
+            double sy = ph / (double) ih;
+            double s  = cover ? Math.max(sx, sy) : Math.min(sx, sy); // COVER or CONTAIN
+
+            int w = (int) Math.round(iw * s);
+            int h = (int) Math.round(ih * s);
+            int x = (pw - w) / 2;
+            int y = (ph - h) / 2;
+
+            g.drawImage(img, x, y, w, h, this);
+        }
+    }
+
 }
