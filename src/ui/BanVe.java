@@ -18,6 +18,10 @@ import dao.NhanVien_Dao;
 import dao.ThanhToan_Dao;
 import dao.SeatAvailabilityDao;
 import entity.ChuyenTau;
+import entity.PassengerInfo;
+import entity.SeatSelection;
+import entity.TicketSelection;
+import entity.TrainInfo;
 import java.math.BigDecimal;
 
 import java.time.LocalDate;
@@ -232,7 +236,7 @@ public class BanVe extends JPanel {
     }
 
     private boolean syncSelectionsFromSeatPage() {
-        List<ManChonGheNgoi.SeatSelection> seats = page2.getSelectedSeats();
+        List<SeatSelection> seats = page2.getSelectedSeats();
         if (seats.isEmpty()) {
             JOptionPane.showMessageDialog(BanVe.this, "Chưa có ghế nào được chọn.");
             return false;
@@ -256,16 +260,16 @@ public class BanVe extends JPanel {
         selections.clear();
         
         BigDecimal defaultFare = page2.getFarePerSeat();
-        List<ManChonGheNgoi.PassengerInfo> infoList = page2.collectPassengerInfos();
-        Map<ManChonGheNgoi.SeatSelection, ManChonGheNgoi.PassengerInfo> infoBySeat = new LinkedHashMap<>();
-        for (ManChonGheNgoi.PassengerInfo info : infoList) {
+        List<PassengerInfo> infoList = page2.collectPassengerInfos();
+        Map<SeatSelection, PassengerInfo> infoBySeat = new LinkedHashMap<>();
+        for (PassengerInfo info : infoList) {
             if (info != null && info.getSeat() != null) {
                 infoBySeat.put(info.getSeat(), info);
             }
         }
 
-        for (ManChonGheNgoi.SeatSelection seat : seats) {
-            ManChonGheNgoi.PassengerInfo info = infoBySeat.get(seat);
+        for (SeatSelection seat : seats) {
+            PassengerInfo info = infoBySeat.get(seat);
             if (info != null) {
                 selections.add(new TicketSelection(currentTrain, info));
             } else {
@@ -337,7 +341,7 @@ public class BanVe extends JPanel {
 
         // 4) Mã chuyến tàu
         String maChuyenTau = selectedTrip != null ? selectedTrip.code
-                : (currentTrain != null ? currentTrain.code : null);
+                : (currentTrain != null ? currentTrain.getCode() : null);
         if (maChuyenTau == null) {
             JOptionPane.showMessageDialog(this, "Không xác định được mã chuyến tàu.");
             return;
@@ -373,147 +377,6 @@ public class BanVe extends JPanel {
     }
 
     // =======================END PAGE 3 =======================
-    
-    // ======= Common helpers =======
-    public static class TrainInfo {
-        private final String code;
-        private final String depart;
-        private final String arrive;
-        private final String route;
-        private final int carCount;
-
-        TrainInfo(String code, String depart, String arrive, String route, int carCount) {
-            this.code = code;
-            this.depart = depart;
-            this.arrive = arrive;
-            this.route = route;
-            this.carCount = carCount;
-        }
-
-        public String getCode() {
-            return code;
-        }
-
-        public String getDepart() {
-            return depart;
-        }
-
-        public String getArrive() {
-            return arrive;
-        }
-
-        public String getRoute() {
-            return route;
-        }
-
-        public int getCarCount() {
-            return carCount;
-        }
-    }
-    public static class TicketSelection {
-        private final TrainInfo train;
-        private final int car;
-        private final int seatNumber;
-        private final String seatId;
-        private final BigDecimal basePrice;
-        private final String hoTen;
-        private final String soDienThoai;
-        private final String cccd;
-        private final String namSinh;
-        private final String maLoaiVe;
-        private final String tenLoaiVe;
-        private final String maGioiTinh;
-        private final String tenGioiTinh;
-
-        TicketSelection(TrainInfo train, ManChonGheNgoi.PassengerInfo info) {
-            this.train = train;
-            ManChonGheNgoi.SeatSelection seat = info != null ? info.getSeat() : null;
-            this.car = seat != null ? seat.getSoToa() : 0;
-            this.seatNumber = seat != null ? seat.getSeatDisplayNumber() : 0;
-            this.seatId = seat != null ? seat.getMaGhe() : null;
-            this.basePrice = info != null && info.getGiaVe() != null ? info.getGiaVe() : BigDecimal.ZERO;
-            this.hoTen = trim(info != null ? info.getHoTen() : null);
-            this.soDienThoai = trim(info != null ? info.getSoDienThoai() : null);
-            this.cccd = trim(info != null ? info.getCccd() : null);
-            this.namSinh = trim(info != null ? info.getNamSinh() : null);
-            this.maLoaiVe = info != null ? info.getMaLoaiVe() : null;
-            this.tenLoaiVe = info != null ? info.getTenLoaiVe() : null;
-            this.maGioiTinh = info != null ? info.getMaGioiTinh() : null;
-            this.tenGioiTinh = info != null ? info.getTenGioiTinh() : null;
-        }
-
-        TicketSelection(TrainInfo train, ManChonGheNgoi.SeatSelection seat, BigDecimal basePrice) {
-            this.train = train;
-            this.car = seat != null ? seat.getSoToa() : 0;
-            this.seatNumber = seat != null ? seat.getSeatDisplayNumber() : 0;
-            this.seatId = seat != null ? seat.getMaGhe() : null;
-            this.basePrice = basePrice != null ? basePrice : BigDecimal.ZERO;
-            this.hoTen = null;
-            this.soDienThoai = null;
-            this.cccd = null;
-            this.namSinh = null;
-            this.maLoaiVe = null;
-            this.tenLoaiVe = null;
-            this.maGioiTinh = null;
-            this.tenGioiTinh = null;
-        }
-
-        private static String trim(String value) {
-            return value != null ? value.trim() : null;
-        }
-
-        public TrainInfo getTrain() {
-            return train;
-        }
-
-        public int getCar() {
-            return car;
-        }
-
-        public int getSeatNumber() {
-            return seatNumber;
-        }
-
-        public String getSeatId() {
-            return seatId;
-        }
-
-        public BigDecimal getBasePrice() {
-            return basePrice != null ? basePrice : BigDecimal.ZERO;
-        }
-
-        public String getHoTen() {
-            return hoTen;
-        }
-
-        public String getSoDienThoai() {
-            return soDienThoai;
-        }
-
-        public String getCccd() {
-            return cccd;
-        }
-
-        public String getNamSinh() {
-            return namSinh;
-        }
-
-        public String getMaLoaiVe() {
-            return maLoaiVe;
-        }
-
-        public String getTenLoaiVe() {
-            return tenLoaiVe;
-        }
-
-        public String getMaGioiTinh() {
-            return maGioiTinh;
-        }
-
-        public String getTenGioiTinh() {
-            return tenGioiTinh;
-        }
-    }
 
     private static String formatVND(int amount) {
         NumberFormat nf = NumberFormat.getInstance(new Locale("vi","VN"));

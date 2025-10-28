@@ -5,7 +5,11 @@ import dao.DoiVe_Dao;
 import dao.NhanVien_Dao;
 import dao.ThanhToan_Dao;
 import entity.ChuyenTau;
+import entity.PassengerInfo;
+import entity.SeatSelection;
 import entity.TicketExchangeInfo;
+import entity.TicketSelection;
+import entity.TrainInfo;
 import util.AppSession;
 
 import javax.swing.*;
@@ -46,12 +50,12 @@ public class DoiVe extends JPanel {
     private final ManChonGheNgoi seatPage = new ManChonGheNgoi();
     private final ManThanhToan paymentPage = new ManThanhToan();
 
-    private final List<BanVe.TicketSelection> selections = new ArrayList<>();
+    private final List<TicketSelection> selections = new ArrayList<>();
     private final NumberFormat currencyFormat;
 
     private TicketExchangeInfo currentTicket;
     private TripSelectPanel.Trip selectedTrip;
-    private BanVe.TrainInfo currentTrain;
+    private TrainInfo currentTrain;
     private BigDecimal exchangeFeeRate;
 
     public DoiVe() {
@@ -177,17 +181,17 @@ public class DoiVe extends JPanel {
             JOptionPane.showMessageDialog(this, "Chưa có vé cũ để đối chiếu.");
             return false;
         }
-        List<ManChonGheNgoi.SeatSelection> seats = seatPage.getSelectedSeats();
+        List<SeatSelection> seats = seatPage.getSelectedSeats();
         if (seats.size() != 1) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn đúng 1 ghế mới để đổi vé.");
             return false;
         }
-        ManChonGheNgoi.SeatSelection seat = seats.get(0);
+        SeatSelection seat = seats.get(0);
         BigDecimal fare = seatPage.getFarePerSeat();
         if (fare == null) {
             fare = BigDecimal.ZERO;
         }
-        ManChonGheNgoi.PassengerInfo passengerInfo = new ManChonGheNgoi.PassengerInfo(
+        PassengerInfo passengerInfo = new PassengerInfo(
                 seat,
                 currentTicket.getHoTen(),
                 currentTicket.getSoDienThoai(),
@@ -200,7 +204,7 @@ public class DoiVe extends JPanel {
                 fare
         );
         selections.clear();
-        selections.add(new BanVe.TicketSelection(currentTrain, passengerInfo));
+        selections.add(new TicketSelection(currentTrain, passengerInfo));
         return true;
     }
 
@@ -287,7 +291,7 @@ public class DoiVe extends JPanel {
             JOptionPane.showMessageDialog(this, "Không tìm thấy mã hành khách tương ứng với vé cũ.");
             return;
         }
-        BanVe.TicketSelection selection = selections.get(0);
+        TicketSelection selection = selections.get(0);
         String maGheMoi = selection.getSeatId();
         if (maGheMoi == null || maGheMoi.isBlank()) {
             JOptionPane.showMessageDialog(this, "Không xác định được ghế mới.");
@@ -490,7 +494,7 @@ public class DoiVe extends JPanel {
         String departTime = trip.depart != null ? trip.depart.format(timeFmt) : "";
         String arriveTime = trip.arrive != null ? trip.arrive.format(timeFmt) : "";
         String route = trip.departStation + " -> " + trip.arriveStation;
-        currentTrain = new BanVe.TrainInfo(
+        currentTrain = new TrainInfo(
                 trip.code,
                 departTime,
                 arriveTime,
