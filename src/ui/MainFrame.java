@@ -176,7 +176,7 @@ public class MainFrame extends JFrame {
         // --------- Tìm kiếm ----------
         JToggleButton btnSearch = makeToggle("Tìm kiếm");
         JPanel searchGroup = groupPanel(
-            makeChild("Tìm kiếm chuyến đi",  () -> cardLayout.show(content, "timkiem_chuyendi")),
+            makeChild("Tìm kiếm chuyến tàu",  () -> cardLayout.show(content, "timkiem_chuyendi")),
             makeChild("Tìm kiếm khách hàng", () -> cardLayout.show(content, "timkiem_khachhang")),
             makeChild("Tìm kiếm nhân viên",  () -> cardLayout.show(content, "timkiem_nhanvien")),
             makeChild("Tìm kiếm hóa đơn",    () -> cardLayout.show(content, "timkiem_hoadon")),
