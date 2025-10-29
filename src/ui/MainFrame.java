@@ -199,7 +199,7 @@ public class MainFrame extends JFrame {
         JToggleButton btnSearch = makeToggle("Tìm kiếm");
         JPanel searchGroup = groupPanel(
             makeChild("Tìm kiếm chuyến tàu",  () -> cardLayout.show(content, "timkiem_chuyendi")),
-            makeChild("Tìm kiếm khách hàng", () -> cardLayout.show(content, "timkiem_khachhang")),
+            makeChild("Tìm kiếm hành khách", () -> cardLayout.show(content, "timkiem_hanhkhach")),
             makeChild("Tìm kiếm nhân viên",  () -> cardLayout.show(content, "timkiem_nhanvien")),
             makeChild("Tìm kiếm hóa đơn",    () -> cardLayout.show(content, "timkiem_hoadon")),
             makeChild("Tìm kiếm khuyến mãi",   () -> cardLayout.show(content, "timkiem_khuyenmai"))
@@ -415,7 +415,7 @@ public class MainFrame extends JFrame {
         content.add(quanLyChuyenTauPanel,             "quanly_chuyentau");
 
         content.add(new TimKiemChuyenDiPanel(),           "timkiem_chuyendi");
-        content.add(new TimKiemHanhKhachPanel(),   "timkiem_khachhang");
+        content.add(new TimKiemHanhKhachPanel(),   "timkiem_hanhkhach");
         content.add(new TimKiemNhanVienPanel(),    "timkiem_nhanvien");
         content.add(new TimKiemHoaDonPanel(),      "timkiem_hoadon");
         content.add(new TimKiemKhuyenMaiPanel(),    "timkiem_khuyenmai");
