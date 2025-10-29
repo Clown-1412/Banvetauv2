@@ -10,7 +10,7 @@ import java.util.List;
 
 public class HoaDon_Dao {
 
-    /** Tạo hóa đơn mới, trả về maHoaDon đã tạo */
+    /** Tạo hóa đơn mới cho nghiệp vụ bán vé và trả về mã vừa sinh. */
     public String createHoaDon(Connection cn, String maNV, String maHK, BigDecimal vat, String maKM) throws SQLException {
         String maHD = "HD" + System.currentTimeMillis();
         String sql = "INSERT INTO HoaDon(maHoaDon, ngayLapHoaDon, VAT, maNV, maHK, maKhuyenMai) VALUES (?,?,?,?,?,?)";
@@ -27,8 +27,12 @@ public class HoaDon_Dao {
     }
 
     /**
-     * Tìm kiếm hoá đơn theo mã, ngày lập từ/đến, theo mã NV hoặc mã HK (tuỳ chọn).
+     * Tìm kiếm hoá đơn theo mã, ngày lập từ/đến, theo mã NV hoặc mã HK
      * Các tham số null/chuỗi rỗng sẽ được bỏ qua trong WHERE.
+     */
+    /**
+     * Tìm kiếm hoá đơn phục vụ màn hình xuất hóa đơn.
+     * Các tham số null/chuỗi rỗng sẽ được bỏ qua khỏi điều kiện.
      */
     public List<HoaDonView> search(String maHoaDon, Timestamp from, Timestamp to, String maNV, String maHK) throws SQLException {
         StringBuilder sql = new StringBuilder();
@@ -58,16 +62,26 @@ public class HoaDon_Dao {
             params.add(to);
             types.add(Types.TIMESTAMP);
         }
+
+        // ====== BỔ SUNG: cùng một ô nhập có thể là MÃ hoặc TÊN ======
+        // Nếu người dùng nhập vào ô "Mã NV", ta tìm (maNV = ?) HOẶC (tenNV LIKE ?)
         if (maNV != null && !maNV.isBlank()) {
-            where.add("hd.maNV = ?");
-            params.add(maNV.trim());
-            types.add(Types.NVARCHAR);
+            where.add("(hd.maNV = ? OR nv.tenNV LIKE ?)");
+            params.add(maNV.trim());                    types.add(Types.NVARCHAR);
+            params.add("%" + maNV.trim() + "%");        types.add(Types.NVARCHAR);
+            // Nếu muốn không phân biệt dấu trên SQL Server
+            // where.add("(hd.maNV = ? OR nv.tenNV COLLATE Vietnamese_CI_AI LIKE ?)");
         }
+
+        // Nếu người dùng nhập vào ô "Mã HK", ta tìm (maHK = ?) HOẶC (tenHK LIKE ?)
         if (maHK != null && !maHK.isBlank()) {
-            where.add("hd.maHK = ?");
-            params.add(maHK.trim());
-            types.add(Types.NVARCHAR);
+            where.add("(hd.maHK = ? OR hk.tenHK LIKE ?)");
+            params.add(maHK.trim());                    types.add(Types.NVARCHAR);
+            params.add("%" + maHK.trim() + "%");        types.add(Types.NVARCHAR);
+            // Không phân biệt dấu (tuỳ CSDL hỗ trợ):
+            // where.add("(hd.maHK = ? OR hk.tenHK COLLATE Vietnamese_CI_AI LIKE ?)");
         }
+        // ============================================================
 
         if (!where.isEmpty()) {
             sql.append(" WHERE ").append(String.join(" AND ", where));
