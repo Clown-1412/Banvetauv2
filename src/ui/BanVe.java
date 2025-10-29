@@ -57,7 +57,7 @@ public class BanVe extends JPanel {
 
     private TrainInfo currentTrain;
     private final List<TicketSelection> selections = new ArrayList<>();
-    private TripSelectPanel.Trip selectedTrip;
+    private ManChonChuyen.Trip selectedTrip;
     private Runnable bookingCompletionListener;
 
     public BanVe() {
@@ -115,8 +115,8 @@ public class BanVe extends JPanel {
         private final CardLayout subCards = new CardLayout();
         private final JPanel subPanel = new JPanel(subCards);
 
-        private final SearchTripPanel searchPanel = new SearchTripPanel();
-        private final TripSelectPanel resultPanel = new TripSelectPanel();
+        private final ManTimChuyen searchPanel = new ManTimChuyen();
+        private final ManChonChuyen resultPanel = new ManChonChuyen();
         
         private String lastGaDi;
         private String lastGaDen;
@@ -160,28 +160,28 @@ public class BanVe extends JPanel {
             lastGaDen = gaDen;
             lastNgay = ngay;
 
-            List<TripSelectPanel.Trip> trips = queryTrips(gaDi, gaDen, ngay);
+            List<ManChonChuyen.Trip> trips = queryTrips(gaDi, gaDen, ngay);
             resultPanel.setContext(gaDi != null ? gaDi : "", gaDen != null ? gaDen : "", ngay);
             resultPanel.setTrips(trips);
             subCards.show(subPanel, "result");
             showingResults = true;
         }
 
-        private List<TripSelectPanel.Trip> queryTrips(String gaDi, String gaDen, LocalDate ngay) {
+        private List<ManChonChuyen.Trip> queryTrips(String gaDi, String gaDen, LocalDate ngay) {
             if (ngay == null) {
                 return java.util.Collections.emptyList();
             }
 
             java.time.LocalDateTime from = ngay.atStartOfDay();
             java.time.LocalDateTime to = ngay.atTime(23, 59, 59);
-            List<TripSelectPanel.Trip> trips = new ArrayList<>();
+            List<ManChonChuyen.Trip> trips = new ArrayList<>();
             try {
                 dao.ChuyenDi_Dao dao = new dao.ChuyenDi_Dao();
                 java.util.Date dFrom = java.util.Date.from(from.atZone(java.time.ZoneId.systemDefault()).toInstant());
                 java.util.Date dTo = java.util.Date.from(to.atZone(java.time.ZoneId.systemDefault()).toInstant());
                 List<ChuyenTau> rs = dao.search(null, gaDi, gaDen, dFrom, dTo);
                 for (ChuyenTau cd : rs) {
-                    trips.add(new TripSelectPanel.Trip(
+                    trips.add(new ManChonChuyen.Trip(
                             cd.getMaChuyenTau(),
                             cd.getMaTau(),
                             cd.getTenTau(),
@@ -217,7 +217,7 @@ public class BanVe extends JPanel {
 
 
     // ======================= PAGE 2 =======================
-    private void handleTripSelection(TripSelectPanel.Trip trip) {
+    private void handleTripSelection(ManChonChuyen.Trip trip) {
         if (trip == null) {
             return;
         }

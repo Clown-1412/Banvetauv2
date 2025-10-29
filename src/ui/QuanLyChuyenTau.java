@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-public class ManQuanLiChuyenTau extends JPanel {
+public class QuanLyChuyenTau extends JPanel {
     private static final DateTimeFormatter DATE_TIME_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     // ===== Inputs =====
@@ -56,7 +56,7 @@ public class ManQuanLiChuyenTau extends JPanel {
 
     private final JTable table = new JTable(model);
 
-    public ManQuanLiChuyenTau() {
+    public QuanLyChuyenTau() {
         // Nền gradient + layout
         setOpaque(false);
         setLayout(new BorderLayout(10, 10));

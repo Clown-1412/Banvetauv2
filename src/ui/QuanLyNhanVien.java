@@ -26,7 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ManQuanLiNhanVien extends JPanel {
+public class QuanLyNhanVien extends JPanel {
 
     private static final Color BLUE_PRIMARY = new Color(47, 107, 255);
     private static final Color BLUE_SOFT = new Color(230, 240, 255);
@@ -65,7 +65,7 @@ public class ManQuanLiNhanVien extends JPanel {
     private final List<NhanVienThongTin> currentData = new ArrayList<>();
     private final Map<String, String> loaiNvByMoTa = new LinkedHashMap<>();
 
-    public ManQuanLiNhanVien() {
+    public QuanLyNhanVien() {
         setLayout(new BorderLayout());
         setBackground(Color.WHITE);
         setBorder(new EmptyBorder(10, 10, 10, 10));
