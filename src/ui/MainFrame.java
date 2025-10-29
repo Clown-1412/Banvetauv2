@@ -12,7 +12,6 @@ import java.util.Date;
 
 public class MainFrame extends JFrame {
     
-    
     // Cards for content
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel content = new JPanel(cardLayout);
@@ -123,7 +122,6 @@ public class MainFrame extends JFrame {
 
         return top;
     }
-
     // ====================== Sidebar (đã chỉnh) ======================
     private JPanel buildSidebar() {
         // Panel menu nền sáng, phẳng, không gradient, không avatar/admin, không viền
@@ -375,16 +373,6 @@ public class MainFrame extends JFrame {
         };
     }
 
-    // Giữ lại method header cũ (không còn được gọi) — bạn có thể xóa nếu muốn
-    private JComponent buildSidebarHeader() { return new JPanel(); }
-
-    private String getInitials(String value) {
-        if (value == null || value.isBlank()) return "U";
-        String[] parts = value.trim().split("\\s+");
-        if (parts.length == 1) return parts[0].substring(0, 1).toUpperCase();
-        return (parts[0].substring(0, 1) + parts[parts.length - 1].substring(0, 1)).toUpperCase();
-    }
-
     private void buildCards() {
         content.add(buildHomePanel(), "home");
 
@@ -443,15 +431,15 @@ public class MainFrame extends JFrame {
         }
     }
 
-    private JPanel simplePanel(String title) {
-        JPanel p = new JPanel(new BorderLayout());
-        p.setBorder(new EmptyBorder(16, 16, 16, 16));
-
-        JLabel lb = new JLabel(title, SwingConstants.LEFT);
-        lb.setFont(lb.getFont().deriveFont(Font.BOLD, 20f));
-        p.add(lb, BorderLayout.NORTH);
-
-        p.add(new JLabel("Nội dung sẽ được phát triển ở đây...", SwingConstants.CENTER), BorderLayout.CENTER);
-        return p;
-    }
+//    private JPanel simplePanel(String title) {
+//        JPanel p = new JPanel(new BorderLayout());
+//        p.setBorder(new EmptyBorder(16, 16, 16, 16));
+//
+//        JLabel lb = new JLabel(title, SwingConstants.LEFT);
+//        lb.setFont(lb.getFont().deriveFont(Font.BOLD, 20f));
+//        p.add(lb, BorderLayout.NORTH);
+//
+//        p.add(new JLabel("Nội dung sẽ được phát triển ở đây...", SwingConstants.CENTER), BorderLayout.CENTER);
+//        return p;
+//    }
 }
