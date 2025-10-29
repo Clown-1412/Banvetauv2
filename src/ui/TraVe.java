@@ -18,10 +18,17 @@ import java.util.Locale;
 
 /** Giao diện "Tìm kiếm vé trả" theo mẫu ảnh (chỉ UI) */
 public class TraVe extends JPanel {
+    private static final String CARD_SEARCH = "search";
+    private static final String CARD_DETAIL = "detail";
+    
     private final JTextField tfMaVe = Ui.field();
     private final JButton btnTraCuu = Ui.primary("Tra Cứu");
     private final NumberFormat currencyFormat;
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
+    
+    private final CardLayout cardLayout = new CardLayout();
+    private final JPanel cards = new JPanel(cardLayout);
+    private final TraVeThongTinPanel detailPanel = new TraVeThongTinPanel();
 
     public TraVe(){
         setLayout(new BorderLayout());
@@ -31,12 +38,34 @@ public class TraVe extends JPanel {
         currencyFormat.setMaximumFractionDigits(0);
         currencyFormat.setMinimumFractionDigits(0);
 
-        add(Ui.banner("TÌM KIẾM VÉ TRẢ"), BorderLayout.NORTH);
+        cards.setOpaque(false);
+        cards.add(buildSearchView(), CARD_SEARCH);
+        cards.add(buildDetailView(), CARD_DETAIL);
+
+        add(cards, BorderLayout.CENTER);
+
+        btnTraCuu.addActionListener(e -> handleTraCuu());
+        tfMaVe.addActionListener(e -> handleTraCuu());
+
+        detailPanel.setOnBack(this::showSearch);
+        detailPanel.setOnSuccess(() -> {
+            tfMaVe.setText("");
+            showSearch();
+        });
+
+        showSearch();
+    }
+
+    private JComponent buildSearchView() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+
+        panel.add(Ui.banner("TÌM KIẾM VÉ TRẢ"), BorderLayout.NORTH);
 
         JPanel body = new JPanel();
         body.setOpaque(false);
         body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-        body.setBorder(new EmptyBorder(14,14,14,14));
+        body.setBorder(new EmptyBorder(14, 14, 14, 14));
 
         // Quy định trả vé
         JPanel rules = Ui.card(Ui.infoBox(
@@ -52,10 +81,30 @@ public class TraVe extends JPanel {
         JPanel searchCard = Ui.card(buildSearchBox(), "");
         body.add(searchCard);
 
-        add(body, BorderLayout.CENTER);
-        
-        btnTraCuu.addActionListener(e -> handleTraCuu());
-        tfMaVe.addActionListener(e -> handleTraCuu());
+        panel.add(body, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JComponent buildDetailView() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+
+        panel.add(Ui.banner("XÁC NHẬN TRẢ VÉ"), BorderLayout.NORTH);
+
+        JPanel wrap = new JPanel(new BorderLayout());
+        wrap.setOpaque(false);
+        wrap.add(detailPanel, BorderLayout.CENTER);
+        panel.add(wrap, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    private void showSearch() {
+        cardLayout.show(cards, CARD_SEARCH);
+    }
+
+    private void showDetail() {
+        cardLayout.show(cards, CARD_DETAIL);
     }
 
     private JComponent buildSearchBox(){
@@ -133,10 +182,12 @@ public class TraVe extends JPanel {
         }
 
         String thoiGianText = thoiGianKhoiHanh.format(dateTimeFormatter);
-        Window window = SwingUtilities.getWindowAncestor(this);
-        TraVeThongTinDialog dialog = new TraVeThongTinDialog(window, info, currencyFormat.format(giaVe),
-                currencyFormat.format(phiKhauTru), currencyFormat.format(soTienHoan),
-                feeRate, thoiGianText, () -> tfMaVe.setText(""));
-        dialog.setVisible(true);
+        detailPanel.setTicketInfo(info,
+                currencyFormat.format(giaVe),
+                currencyFormat.format(phiKhauTru),
+                currencyFormat.format(soTienHoan),
+                feeRate,
+                thoiGianText);
+        showDetail();
     }
 }
