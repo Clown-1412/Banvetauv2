@@ -90,7 +90,14 @@ public class ManQuanLiHanhKhach extends JPanel {
         add(rightTable, BorderLayout.CENTER);
 
         wireEvents();
-        loadInitialData();
+        reloadData();
+
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent e) {
+                reloadData();
+            }
+        });
     }
 
     private JPanel buildFormPanel() {
@@ -288,7 +295,7 @@ public class ManQuanLiHanhKhach extends JPanel {
         });
     }
 
-    private void loadInitialData() {
+    private void reloadData() {
         loadGioiTinhOptions();
         refreshTable();
         resetFormForNewEntry();
