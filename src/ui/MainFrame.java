@@ -107,19 +107,16 @@ public class MainFrame extends JFrame {
         top.setBackground(new Color(101, 150, 248));
         top.setBorder(new EmptyBorder(8, 12, 8, 12));
 
-        String role;
+        String roleDescription = "Nhân viên";
         if (permission != null) {
-            if (permission.getTenLoaiTK() != null) {
-                role = permission.getTenLoaiTK();
+            if (permission.getMoTa() != null) {
+                roleDescription = permission.getMoTa();
+            } else if (permission.getTenLoaiTK() != null) {
+                roleDescription = permission.getTenLoaiTK();
             } else if (permission.getMaLoaiTK() != null) {
-                role = permission.getMaLoaiTK();
-            } else {
-                role = "Nhân viên";
+                roleDescription = permission.getMaLoaiTK();
             }
-        } else {
-            role = "Nhân viên";
         }
-        String name = tk != null && tk.getTenDangNhap() != null ? tk.getTenDangNhap() : "User";
 
         JLabel title = new JLabel("Đường sắt Sài Gòn");
         title.setForeground(Color.WHITE);
@@ -128,7 +125,7 @@ public class MainFrame extends JFrame {
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 6));
         right.setOpaque(false);
 
-        JLabel lblHello = new JLabel("Chào " + role + " " + name);
+        JLabel lblHello = new JLabel("Chào " + roleDescription);
         lblHello.setForeground(Color.WHITE);
 
         JLabel lblDate = new JLabel("Ngày " + new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
