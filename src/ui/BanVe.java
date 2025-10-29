@@ -28,6 +28,7 @@ import entity.TrainInfo;
 import entity.InvoicePdfInfo;
 import entity.TicketPdfInfo;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import java.awt.Desktop;
 import java.nio.file.Files;
@@ -380,6 +381,9 @@ public class BanVe extends JPanel {
         try {
             ThanhToan_Dao service = new ThanhToan_Dao();
             BigDecimal vat = page3.getVatRateDecimal();
+            BigDecimal vatPercent = vat != null
+                    ? vat.multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
             String maKM = page3.getSelectedPromotionId();
             BigDecimal unit = page3.getUnitPriceAfterAdjustments(); // đơn giá/ve sau KM+VAT
             if (unit == null) {
@@ -387,7 +391,7 @@ public class BanVe extends JPanel {
             }
 
             ThanhToan_Dao.PaymentResult paymentResult = service.luuHoaDonVaVe(
-                    maNV, maHK, maChuyenTau, maGheList, unit, vat, maKM);
+                    maNV, maHK, maChuyenTau, maGheList, unit, vatPercent, maKM);
             new SeatAvailabilityDao().refreshForTrip(maChuyenTau);
 
             selections.clear();
