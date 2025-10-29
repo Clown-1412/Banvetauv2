@@ -161,9 +161,9 @@ public class MainFrame extends JFrame {
 
         // --------- Danh mục ----------
         danhMucToggle = makeToggle("Danh mục");
-        menuQuanLyKhuyenMaiBtn = makeChild("Quản lí khuyến mãi", () -> cardLayout.show(content, "khuyenmai"));
-        menuQuanLyTaiKhoanBtn = makeChild("Quản lí tài khoản",  () -> cardLayout.show(content, "quanly_taikhoan"));
-        menuQuanLyNhanVienBtn = makeChild("Quản lí Nhân viên",  () -> cardLayout.show(content, "quanly_nhanvien"));
+        menuQuanLyKhuyenMaiBtn = makeChild("Quản lý khuyến mãi", () -> cardLayout.show(content, "khuyenmai"));
+        menuQuanLyTaiKhoanBtn = makeChild("Quản lý tài khoản",  () -> cardLayout.show(content, "quanly_taikhoan"));
+        menuQuanLyNhanVienBtn = makeChild("Quản lý Nhân viên",  () -> cardLayout.show(content, "quanly_nhanvien"));
         menuQuanLyChuyenTauBtn = makeChild("Quản lý chuyến tàu",  () -> cardLayout.show(content, "quanly_chuyentau"));
         menuQuanLyHanhKhachBtn = makeChild("Quản lý hành khách",  () -> cardLayout.show(content, "quanly_hành khách"));
         danhMucGroup = groupPanel(

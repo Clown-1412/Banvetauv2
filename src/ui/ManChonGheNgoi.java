@@ -1,5 +1,5 @@
 package ui;
-
+// ================== CHỨC NĂNG BÁN VÉ · MÀN CHỌN GHẾ ==================
 import dao.FormValidator;
 import dao.GiaVe_Dao;
 import dao.HanhKhach_Dao;
