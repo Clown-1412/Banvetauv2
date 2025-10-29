@@ -253,6 +253,11 @@ public class BanVe extends JPanel {
         if (!page2.validatePassengerForms()) {
             return;
         }
+        
+        if (!syncSelectionsFromSeatPage()) {
+            return;
+        } // siêu quan trọng
+        
         page3.setTrainInfo(currentTrain);
         page3.setSelections(selections);
         wizard.show(cards, "p3");

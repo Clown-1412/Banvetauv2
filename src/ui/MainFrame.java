@@ -45,17 +45,17 @@ public class MainFrame extends JFrame {
     // ===================================================
 
     // Helper: kiểm tra quyền quản lý
-    private boolean isManager() {
-        String role = (tk != null ? tk.getLoaiTK() : null);
-        return role != null && role.equalsIgnoreCase("NhanVienQuanLy");
-    }
+//    private boolean isManager() {
+//        String role = (tk != null ? tk.getLoaiTK() : null);
+//        return role != null && role.equalsIgnoreCase("NhanVienQuanLy");
+//    }
 
     // Constructor
     public MainFrame(TaiKhoan tk) {
         this.tk = tk;
         setTitle("Đường sắt Sài Gòn - Hệ thống bán vé");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1200, 750);
+        setSize(1200, 750); 
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
 
@@ -119,7 +119,6 @@ public class MainFrame extends JFrame {
 
         top.add(title, BorderLayout.WEST);
         top.add(right, BorderLayout.EAST);
-
         return top;
     }
     // ====================== Sidebar (đã chỉnh) ======================
