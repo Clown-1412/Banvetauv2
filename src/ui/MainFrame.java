@@ -62,7 +62,7 @@ public class MainFrame extends JFrame {
 
         JPanel sidebar = buildSidebar();      // << menu mới nền sáng, không header admin
         JPanel topbar = buildTopbar();
-        buildCards();
+        buildCards();   
         banVePanel.setBookingCompletionListener(() -> quanLyChuyenTauPanel.reloadData());
         
 

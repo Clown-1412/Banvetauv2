@@ -250,7 +250,7 @@ public class BanVe extends JPanel {
     }
 
     private void goToPaymentStep() {
-        if (!syncSelectionsFromSeatPage()) {
+        if (!page2.validatePassengerForms()) {
             return;
         }
         page3.setTrainInfo(currentTrain);
